@@ -1,0 +1,16 @@
+include LICENCE.txt
+include .coveragerc
+include .editorconfig
+include tox.ini
+
+recursive-include docs *.rst
+include docs/conf.py
+include docs/Makefile
+exclude docs/autodoc-requirements.txt
+prune docs/_build
+
+recursive-include script_tests *.py
+recursive-include unit_tests *.py
+
+graft cortical_voluba/templates
+graft cortical_voluba/static
