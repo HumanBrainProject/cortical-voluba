@@ -9,8 +9,7 @@ include docs/Makefile
 exclude docs/autodoc-requirements.txt
 prune docs/_build
 
-recursive-include script_tests *.py
-recursive-include unit_tests *.py
+recursive-include tests *.py
 
 graft cortical_voluba/templates
 graft cortical_voluba/static
