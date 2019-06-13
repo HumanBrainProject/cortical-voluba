@@ -90,6 +90,7 @@ def create_app(test_config=None):
     app = flask.Flask(__name__,
                       instance_path=os.environ.get('INSTANCE_PATH'),
                       instance_relative_config=True)
+    app.config.from_object(DefaultConfig)
     if test_config is None:
         # load the instance config, if it exists, when not testing
         app.config.from_pyfile('config.py', silent=True)
