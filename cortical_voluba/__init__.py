@@ -64,6 +64,8 @@ class DefaultConfig:
     # Passed as the 'origins' parameter to flask_cors.CORS, see
     # https://flask-cors.readthedocs.io/en/latest/api.html#flask_cors.CORS
     CORS_ORIGINS = r'https://voluba(-dev)?\.apps(-dev)?\.hbp\.eu'
+    # Set the full path to bv_env if it not in the system PATH
+    BV_ENV_PATH = 'bv_env'
 
 
 def create_app(test_config=None):

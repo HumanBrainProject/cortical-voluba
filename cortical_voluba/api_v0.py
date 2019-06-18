@@ -89,7 +89,12 @@ def create_depth_map_computation():
                        .format(segmentation_name)],
         }), 400
 
-    task_result = tasks.depth_map_computation_task.delay(params)
+    logger.debug('Submitting Celery job with params=%s', params)
+    task_result = tasks.depth_map_computation_task.delay(
+        params,
+        bearer_token=bearer_token
+    )
+    logger.debug('Submitted Celery job has id=%s', task_result.id)
 
     return jsonify({
         'status_polling_url': url_for('api_v0.depth_map_computation_status',
@@ -103,7 +108,8 @@ def depth_map_computation_status(computation_id):
     # TODO test if the task exists, return 404 if not
     # TODO set 'params': task_result.args[0] (but how can I access args??)
     state_message = task_result.state
-    if 'message' in task_result.result:
+    if (isinstance(task_result.result, dict)
+            and 'message' in task_result.result):
         state_message += ' ({0})'.format(task_result.result['message'])
     if not task_result.ready():
         result = {

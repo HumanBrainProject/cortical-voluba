@@ -16,23 +16,144 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with cortical-voluba. If not, see <https://www.gnu.org/licenses/>.
 
+import datetime
+import os.path
+import tempfile
+import shutil
+import subprocess
+import sys
+
 import celery.utils.log
+from flask import current_app
+import requests
+from werkzeug.utils import secure_filename
 
 from cortical_voluba.celery import celery_app
+from cortical_voluba import image_service
 
 logger = celery.utils.log.get_task_logger(__name__)
 
 
-def depth_map_computation_task(self, params):
-    self.update_state(state='PROGRESS', meta={
-        'message': 'downloading segmentation',
-    })
-    return {
-        'message': 'finished (dummy)',
-        'results': {
-            'image_service_base_url': params['image_service_base_url'],
-            'depth_map_name': None,
-            'depth_map_neuroglancer_url': None,
-        },
-    }
+def datetime_now_str():
+    return datetime.datetime.utcnow().replace(microsecond=0).isoformat()
+
+
+def escape_virtual_env(env):
+    # Test if we are running inside of a virtual environment
+    if hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix:
+        env = env.copy()
+        logger.debug('Escaping virtual environment (prefix=%s, old PATH=%s)',
+                     sys.prefix, env['PATH'])
+        path_components = [
+            d for d in env['PATH'].split(os.pathsep)
+            if (os.path.realpath(d)
+                != os.path.join(os.path.realpath(sys.prefix), 'bin'))
+        ]
+        env['PATH'] = os.pathsep.join(path_components)
+        try:
+            del env['PYTHONHOME']
+        except KeyError:
+            pass
+        try:
+            del env['VIRTUAL_ENV']
+        except KeyError:
+            pass
+        logger.debug('Escaped virtual environment. PATH is now %s',
+                     env['PATH'])
+        return env
+    else:
+        return env
+
+
 @celery_app.task(bind=True)
+def depth_map_computation_task(self, params, *, bearer_token):
+    work_dir = tempfile.mkdtemp(prefix='depth_map_')
+    try:
+        image_service_base_url = params['image_service_base_url']
+        segmentation_name = params['segmentation_name']
+        auth = image_service.BearerTokenAuth(bearer_token)
+        client = image_service.ImageServiceClient(image_service_base_url,
+                                              auth=auth)
+        segmentation_basename = secure_filename(segmentation_name)
+        segmentation_path = os.path.join(
+            work_dir, segmentation_basename + '.nii.gz')
+        segmentation_S16_path = os.path.join(
+            work_dir, segmentation_basename + '_S16.nii.gz')
+        depth_map_path = os.path.join(
+            work_dir,
+            segmentation_basename + '-equivolumetric-depth.nii.gz'
+        )
+
+        self.update_state(state='PROGRESS', meta={
+            'message': 'downloading segmentation',
+        })
+        logger.info('downloading segmentation to %s', segmentation_path)
+        with open(segmentation_path, 'wb') as f:
+            client.download_compressed_nifti(segmentation_name, f)
+
+        self.update_state(state='PROGRESS', meta={
+            'message': 'converting segmentation',
+        })
+        system_env = escape_virtual_env(os.environ)
+        command = [current_app.config['BV_ENV_PATH'],
+                   'AimsFileConvert',
+                   '--type', 'S16',
+                   '--input', segmentation_path,
+                   '--output', segmentation_S16_path]
+        logger.debug('Running %s', command)
+        subprocess.check_call(command, env=system_env)
+
+        self.update_state(state='PROGRESS', meta={
+            'message': 'computing the depth map',
+        })
+        logger.info('computing the depth map into %s', depth_map_path)
+        command = [current_app.config['BV_ENV_PATH'],
+                   'python', '-m', 'capsul.run',
+                   'highres_cortex.capsul.isovolume',
+                   'classif=' + segmentation_S16_path,
+                   'verbosity=1',
+                   'equivolumetric_depth=' + depth_map_path]
+        logger.debug('Running %s', command)
+        subprocess.check_call(command, env=system_env)
+
+        self.update_state(state='PROGRESS', meta={
+            'message': 'uploading the depth map',
+        })
+        logger.info('uploading the depth map')
+        depth_map_filename = (
+            segmentation_basename + '-equivolumetric-depth.nii.gz'
+        )
+        try:
+            with open(depth_map_path, 'rb') as f:
+                client.preflight_image(f, file_name=depth_map_filename)
+        except requests.HTTPError as e:
+            if e.response.status_code == 409:
+                depth_map_filename = (
+                    segmentation_basename + '-equivolumetric-depth-'
+                    + datetime_now_str() + '.nii.gz'
+                )
+            else:
+                raise
+        with open(depth_map_path, 'rb') as f:
+            depth_map_name, _ = client.upload_image_and_get_name(
+                f, file_name=depth_map_filename)
+
+        try:
+            depth_map_info = client.get_image_info(depth_map_name)
+            if depth_map_info:
+                depth_map_neuroglancer_url = depth_map_info['links']['normalized']
+        except Exception:
+            logger.exception('Failed to retrieve Neuroglancer URL of the '
+                             'depth map named %s', depth_map_name)
+            depth_map_neuroglancer_url = None
+
+        return {
+            'message': 'success',
+            'results': {
+                'image_service_base_url': image_service_base_url,
+                'depth_map_name': depth_map_name,
+                'depth_map_neuroglancer_url': depth_map_neuroglancer_url,
+            },
+        }
+    finally:
+        shutil.rmtree(work_dir)
