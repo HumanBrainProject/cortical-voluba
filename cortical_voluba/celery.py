@@ -25,33 +25,34 @@ from . import create_app as create_flask_app
 __all__ = ['make_celery', 'celery_app']
 
 
-def make_celery(flask_app):
+def create_celery_app(flask_app):
     """Initialize the Celery instance in the global variable 'celery_app'."""
-    global celery_app
-    celery_app = Celery(
+    app = Celery(
         flask_app.import_name,
         backend=flask_app.config['CELERY_RESULT_BACKEND'],
         broker=flask_app.config['CELERY_BROKER_URL']
     )
-    celery_app.conf.update(flask_app.config)
+    app.conf.update(flask_app.config)
 
-    class ContextTask(celery_app.Task):
+    class ContextTask(app.Task):
         def __call__(self, *args, **kwargs):
             with flask_app.app_context():
                 return self.run(*args, **kwargs)
 
-    celery_app.Task = ContextTask
+    app.Task = ContextTask
 
-    celery_app.autodiscover_tasks(packages=['cortical_voluba'])
+    return app
 
 
 celery_app = None
 
 # If current_app is defined, it means that the Flask app already exists, so
-# create_app() will take care of calling make_celery.
+# create_app() will take care of running:
+#
+#     celery_app = create_celery_app(flask_app)
 #
 # If not, it means that cortical_voluba.celery is imported outside of the Flask
 # app (probably by the celery command-line tool) so we need to instantiate the
-# Flask app so that it will call make_celery().
+# Flask app.
 if not current_app:
     create_flask_app()

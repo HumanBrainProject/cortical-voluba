@@ -19,7 +19,8 @@
 """VoluBA backend for non-linear depth-informed alignment of cortical patches.
 """
 
-import os.path
+import importlib
+import os
 
 import flask
 import flask_cors
@@ -109,8 +110,15 @@ def create_app(test_config=None):
     # Celery must be initialized before the tasks module is imported, i.e.
     # before the API modules.
     with app.app_context():
+        # We must instantiate a new Celery app each time a Flask app is
+        # instantiated, because the Celery app and tasks are tied to the Flask
+        # app (they read from flask_app.config).
         from . import celery
-        celery.make_celery(app)
+        celery.celery_app = celery.create_celery_app(app)
+        # Every time a new Celery app is instantiated, the tasks need to be
+        # re-created because they must use the correct app at import time.
+        from . import tasks
+        importlib.reload(tasks)
 
     from . import api_v0
     app.register_blueprint(api_v0.bp)

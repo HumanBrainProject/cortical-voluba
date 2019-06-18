@@ -17,13 +17,12 @@
 # along with cortical-voluba. If not, see <https://www.gnu.org/licenses/>.
 
 import celery.utils.log
-from celery import shared_task
 
+from cortical_voluba.celery import celery_app
 
 logger = celery.utils.log.get_task_logger(__name__)
 
 
-@shared_task(bind=True, track_started=True)
 def depth_map_computation_task(self, params):
     self.update_state(state='PROGRESS', meta={
         'message': 'downloading segmentation',
@@ -36,3 +35,4 @@ def depth_map_computation_task(self, params):
             'depth_map_neuroglancer_url': None,
         },
     }
+@celery_app.task(bind=True)
