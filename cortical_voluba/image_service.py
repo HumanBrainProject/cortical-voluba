@@ -92,12 +92,15 @@ class LowLevelImageServiceClient:
     :param requests.auth.AuthBase auth: optional authentication callable to
            identify the user of the image service (normally
            `BearerTokenAuth`).
+    :param float timeout: timeout (in seconds) used for all HTTP calls to the
+           image service
     """
-    def __init__(self, base_url, auth=None):
+    def __init__(self, base_url, auth=None, timeout=10):
         self.base_url = base_url
         if self.base_url[-1] != '/':
             self.base_url += '/'
         self.auth = auth
+        self.timeout = timeout
 
     def list_images(self):
         """List the images contained in the image service.
@@ -110,7 +113,7 @@ class LowLevelImageServiceClient:
         :raises requests.RequestException: for HTTP or communication errors
         """
         r = requests.get(self.base_url + 'list',
-                         auth=self.auth)
+                         auth=self.auth, timeout=self.timeout)
         r.raise_for_status()
         return r.json()
 
@@ -161,7 +164,7 @@ class LowLevelImageServiceClient:
         r = requests.post(self.base_url + endpoint,
                           files=files,
                           headers=headers,
-                          auth=self.auth)
+                          auth=self.auth, timeout=self.timeout)
         r.raise_for_status()
         return r.json()
 
@@ -182,7 +185,7 @@ class LowLevelImageServiceClient:
         # has a leading slash), but it is in fact relative to the base_url.
         normalized_url = normalized_url.lstrip('/')
         r = requests.delete(urljoin(self.base_url, normalized_url),
-                            auth=self.auth)
+                            auth=self.auth, timeout=self.timeout)
         r.raise_for_status()
 
     def download_nifti(self, name, output_file):
@@ -194,7 +197,7 @@ class LowLevelImageServiceClient:
         :raises requests.RequestException: for HTTP or communication errors
         """
         r = requests.get(self.base_url + 'download/' + name + '.nii',
-                         auth=self.auth, stream=True)
+                         auth=self.auth, stream=True, timeout=self.timeout)
         r.raise_for_status()
         for chunk in r.iter_content(_DOWNLOAD_CHUNK_SIZE):
             output_file.write(chunk)
@@ -208,7 +211,7 @@ class LowLevelImageServiceClient:
         :raises requests.RequestException: for HTTP or communication errors
         """
         r = requests.get(self.base_url + 'download/' + name + '.nii.gz',
-                         auth=self.auth, stream=True)
+                         auth=self.auth, stream=True, timeout=self.timeout)
         if r.status_code == 404:
             # As of 2019-06-06 the server only provides this endpoint if the
             # file was uploaded as compressed Nifti.
@@ -235,7 +238,7 @@ class LowLevelImageServiceClient:
 
         """
         r = requests.get(self.base_url + 'download/' + name,
-                         auth=self.auth, stream=True)
+                         auth=self.auth, stream=True, timeout=self.timeout)
         r.raise_for_status()
         for chunk in r.iter_content(chunk_size=_DOWNLOAD_CHUNK_SIZE):
             output_file.write(chunk)
