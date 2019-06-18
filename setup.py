@@ -68,6 +68,9 @@ setuptools.setup(
     install_requires=[
         "Flask",
         "Flask-Cors",
+        "celery",
+        "redis",
+        "marshmallow ~= 3.0.0rc6",
     ],
     python_requires="~= 3.5",
     extras_require={

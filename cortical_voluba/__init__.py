@@ -56,14 +56,10 @@ This must be changed to point to the exact code of any modified version, in
 order to comply with the GNU Affero GPL licence.
 """
 
+
 class DefaultConfig:
-    # The default value (None) uses an sqlite database named
-    # "cortical_voluba.sqlite" in flask_app.instance_path.
-    # "sqlite:///cortical_voluba.sqlite" cannot be used because it is not
-    # relative to the instance path.
-    SQLALCHEMY_DATABASE_URI = None
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    CELERY_BROKER_URL = "redis://"
+    CELERY_BROKER_URL = 'redis://localhost:6379/0'
+    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
     # Passed as the 'origins' parameter to flask_cors.CORS, see
     # https://flask-cors.readthedocs.io/en/latest/api.html#flask_cors.CORS
     CORS_ORIGINS = r'https://voluba(-dev)?\.apps(-dev)?\.hbp\.eu'
@@ -72,20 +68,22 @@ class DefaultConfig:
 def create_app(test_config=None):
     """Instantiate the cortical-voluba Flask application."""
     from logging.config import dictConfig
+    # logging configuration inspired by
+    # http://flask.pocoo.org/docs/1.0/logging/#basic-configuration
     dictConfig({
-    'version': 1,
-    'formatters': {'default': {
-        'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
-    }},
-    'handlers': {'wsgi': {
-        'class': 'logging.StreamHandler',
-        'stream': 'ext://flask.logging.wsgi_errors_stream',
-        'formatter': 'default'
-    }},
-    'root': {
-        'level': 'INFO',
-        'handlers': ['wsgi']
-    }
+        'version': 1,
+        'formatters': {'default': {
+            'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
+        }},
+        'handlers': {'wsgi': {
+            'class': 'logging.StreamHandler',
+            'stream': 'ext://flask.logging.wsgi_errors_stream',
+            'formatter': 'default'
+        }},
+        'root': {
+            'level': 'INFO',
+            'handlers': ['wsgi']
+        }
     })
     app = flask.Flask(__name__,
                       instance_path=os.environ.get('INSTANCE_PATH'),
@@ -107,6 +105,12 @@ def create_app(test_config=None):
         # TODO: do I need to add supports_credentials to accept the
         # Authorization header?
         flask_cors.CORS(app, origins=app.config['CORS_ORIGINS'])
+
+    # Celery must be initialized before the tasks module is imported, i.e.
+    # before the API modules.
+    with app.app_context():
+        from . import celery
+        celery.make_celery(app)
 
     from . import api_v0
     app.register_blueprint(api_v0.bp)

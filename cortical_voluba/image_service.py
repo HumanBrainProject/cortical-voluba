@@ -290,7 +290,6 @@ class ImageServiceClient(LowLevelImageServiceClient):
                service (original file name with .nii or .nii.gz stripped away)
         :raises requests.RequestException: for HTTP or communication errors
         :raises RuntimeError: if the image cannot be found on the server
-
         """
         image_info = self.get_image_info(name)
         if image_info is None:

@@ -16,28 +16,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with cortical-voluba. If not, see <https://www.gnu.org/licenses/>.
 
-import pytest
 
-import cortical_voluba
-
-
-@pytest.fixture
-def flask_app():
-    app = cortical_voluba.create_app(test_config={
-        'TESTING': True,
-        'CELERY_BROKER_URL': None,
-        'CELERY_RESULT_BACKEND': None,
-    })
-
-    return app
+def test_config():
+    from cortical_voluba import create_app
+    assert not create_app().testing
+    assert create_app(test_config={'TESTING': True}).testing
 
 
-@pytest.fixture
-def flask_client(flask_app):
-    return flask_app.test_client()
-
-
-# Raise exception on falling back to default app
-@pytest.fixture(scope='session')
-def use_celery_app_trap():
-    return True
+def test_source_link(flask_client):
+    response = flask_client.get('/source')
+    assert response.status_code == 302

@@ -16,28 +16,23 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with cortical-voluba. If not, see <https://www.gnu.org/licenses/>.
 
-import pytest
+import celery.utils.log
+from celery import shared_task
 
-import cortical_voluba
+
+logger = celery.utils.log.get_task_logger(__name__)
 
 
-@pytest.fixture
-def flask_app():
-    app = cortical_voluba.create_app(test_config={
-        'TESTING': True,
-        'CELERY_BROKER_URL': None,
-        'CELERY_RESULT_BACKEND': None,
+@shared_task(bind=True, track_started=True)
+def depth_map_computation_task(self, params):
+    self.update_state(state='PROGRESS', meta={
+        'message': 'downloading segmentation',
     })
-
-    return app
-
-
-@pytest.fixture
-def flask_client(flask_app):
-    return flask_app.test_client()
-
-
-# Raise exception on falling back to default app
-@pytest.fixture(scope='session')
-def use_celery_app_trap():
-    return True
+    return {
+        'message': 'finished (dummy)',
+        'results': {
+            'image_service_base_url': params['image_service_base_url'],
+            'depth_map_name': None,
+            'depth_map_neuroglancer_url': None,
+        },
+    }

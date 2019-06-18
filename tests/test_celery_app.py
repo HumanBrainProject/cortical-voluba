@@ -16,13 +16,20 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with cortical-voluba. If not, see <https://www.gnu.org/licenses/>.
 
+import importlib
 
-def test_config():
-    from cortical_voluba import create_app
-    assert not create_app().testing
-    assert create_app({'TESTING': True}).testing
+import pytest
 
 
-def test_source_link(flask_client):
-    response = flask_client.get('/source')
-    assert response.status_code == 302
+def test_instantiate_celery_app_outside_of_flask():
+    # A single Python process is used by pytest, thus we force Python to import
+    # the module again, so that initialization happens outside of create_app().
+    import cortical_voluba.celery
+    importlib.reload(cortical_voluba.celery)
+    assert cortical_voluba.celery.celery_app is not None
+
+
+@pytest.mark.usefixtures('flask_app')
+def test_instantiate_celery_app_in_flask():
+    import cortical_voluba.celery
+    assert cortical_voluba.celery.celery_app is not None
