@@ -37,4 +37,4 @@ USER user
 ###########################
 # 4. Configure the server #
 ###########################
-CMD celery --app 'cortical_voluba.celery' --loglevel=info worker
+CMD celery worker --app cortical_voluba.celery --loglevel=info
