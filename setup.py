@@ -66,11 +66,12 @@ setuptools.setup(
     keywords="neuroimaging",
     packages=["cortical_voluba"],
     install_requires=[
-        "Flask",
+        "requests ~= 2.22",
+        "Flask ~= 1.0",
         "Flask-Cors",
-        "celery",
+        "celery ~= 4.3",
         "redis",
-        "marshmallow ~= 3.0.0rc6",
+        "marshmallow >= 3.0.0rc7",
     ],
     python_requires="~= 3.5",
     extras_require={
