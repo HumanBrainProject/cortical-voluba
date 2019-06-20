@@ -68,6 +68,11 @@ class DefaultConfig:
     CORS_ORIGINS = r'https://voluba(-dev)?\.apps(-dev)?\.hbp\.eu'
     # Set the full path to bv_env if it not in the system PATH
     BV_ENV_PATH = 'bv_env'
+    # Set to True to enable the /echo endpoint (for debugging)
+    ENABLE_ECHO = False
+    # Set up werkzeug.middleware.proxy_fix.ProxyFix with the provided keyword
+    # arguments
+    PROXY_FIX = None
 
 
 def create_app(test_config=None):
@@ -77,7 +82,8 @@ def create_app(test_config=None):
     logging.config.dictConfig({
         'version': 1,
         'formatters': {'default': {
-            'format': '[%(asctime)s] [%(process)d] %(levelname)s in %(module)s: %(message)s',
+            'format': '[%(asctime)s] [%(process)d] %(levelname)s '
+                      'in %(module)s: %(message)s',
             'datefmt': '%Y-%m-%d %H:%M:%S %z',
         }},
         'handlers': {'wsgi': {
@@ -143,5 +149,10 @@ def create_app(test_config=None):
 
     from . import api_v0
     app.register_blueprint(api_v0.bp)
+
+    if app.config.get('PROXY_FIX'):
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        # App is behind one proxy that sets the -For and -Host headers.
+        app = ProxyFix(app, **app.config['PROXY_FIX'])
 
     return app
