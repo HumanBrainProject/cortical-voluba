@@ -20,6 +20,8 @@
 """
 
 import importlib
+import logging
+import logging.config
 import os
 
 import flask
@@ -70,10 +72,9 @@ class DefaultConfig:
 
 def create_app(test_config=None):
     """Instantiate the cortical-voluba Flask application."""
-    from logging.config import dictConfig
     # logging configuration inspired by
     # http://flask.pocoo.org/docs/1.0/logging/#basic-configuration
-    dictConfig({
+    logging.config.dictConfig({
         'version': 1,
         'formatters': {'default': {
             'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
@@ -88,6 +89,14 @@ def create_app(test_config=None):
             'handlers': ['wsgi']
         }
     })
+
+    # If we are running under Gunicorn, set up the root logger to use the same
+    # handler as the Gunicorn error stream.
+    if logging.getLogger('gunicorn.error').handlers:
+        root_logger = logging.getLogger()
+        root_logger.handlers = logging.getLogger('gunicorn.error').handlers
+        root_logger.setLevel = logging.getLogger('gunicorn.error').level
+
     app = flask.Flask(__name__,
                       instance_path=os.environ.get('INSTANCE_PATH'),
                       instance_relative_config=True)
