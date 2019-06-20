@@ -95,7 +95,7 @@ def create_app(test_config=None):
     if logging.getLogger('gunicorn.error').handlers:
         root_logger = logging.getLogger()
         root_logger.handlers = logging.getLogger('gunicorn.error').handlers
-        root_logger.setLevel = logging.getLogger('gunicorn.error').level
+        root_logger.setLevel(logging.getLogger('gunicorn.error').level)
 
     app = flask.Flask(__name__,
                       instance_path=os.environ.get('INSTANCE_PATH'),
