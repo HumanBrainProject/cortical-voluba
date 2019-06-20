@@ -114,6 +114,15 @@ def create_app(test_config=None):
     def source():
         return flask.redirect(SOURCE_URL)
 
+    if app.config.get('ENABLE_ECHO'):
+        @app.route('/echo')
+        def echo():
+            app.logger.info('ECHO:\n'
+                            'Headers\n'
+                            '=======\n'
+                            '%s', flask.request.headers)
+            return ''
+
     if app.config.get('CORS_ORIGINS'):
         # TODO: do I need to add supports_credentials to accept the
         # Authorization header?
