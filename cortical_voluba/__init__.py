@@ -77,7 +77,8 @@ def create_app(test_config=None):
     logging.config.dictConfig({
         'version': 1,
         'formatters': {'default': {
-            'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
+            'format': '[%(asctime)s] [%(process)d] %(levelname)s in %(module)s: %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S %z',
         }},
         'handlers': {'wsgi': {
             'class': 'logging.StreamHandler',
