@@ -13,13 +13,13 @@ RUN apt-get update \
         libpython2.7 \
         python-pip \
         python-six \
+        python-traits \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# We need to use the same version of numpy as casa-dev:ubuntu-16.04
-# RUN pip install --disable-pip-version-check --no-cache-dir \
-#     numpy==1.13.1
 
+# We need to use the same version of numpy as casa-dev:ubuntu-16.04
+RUN pip install --disable-pip-version-check --no-cache-dir 'numpy<1.16'
 COPY install /usr/local
 RUN ldconfig
 
