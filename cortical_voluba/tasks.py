@@ -142,7 +142,10 @@ def depth_map_computation_task(self, params, *, bearer_token):
         try:
             depth_map_info = client.get_image_info(depth_map_name)
             if depth_map_info:
-                depth_map_neuroglancer_url = depth_map_info['links']['normalized']
+                depth_map_neuroglancer_url = (
+                    'precomputed://'
+                    + depth_map_info['links']['normalized']
+                )
         except Exception:
             logger.exception('Failed to retrieve Neuroglancer URL of the '
                              'depth map named %s', depth_map_name)
@@ -220,7 +223,8 @@ def alignment_computation_task(self, params, *, bearer_token):
             resampled_image_info = client.get_image_info(resampled_image_name)
             if resampled_image_info:
                 resampled_image_neuroglancer_url = (
-                    resampled_image_info['links']['normalized']
+                    'precomputed://'
+                    + resampled_image_info['links']['normalized']
                 )
         except Exception:
             logger.exception('Failed to retrieve Neuroglancer URL of the '
