@@ -195,7 +195,7 @@ def make_computation_task_status_response(task_result):
         state_message += ' ({0})'.format(task_result.result['message'])
     if not task_result.ready():
         result = {
-            'finished': True,
+            'finished': False,
             'message': state_message,
         }
     elif task_result.successful():
