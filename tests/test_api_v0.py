@@ -208,6 +208,9 @@ TEST_ALIGNMENT_REQUEST = {
         {
             'source_point': [0, 0, 0],
             'target_point': [1, 1, 1],
+            'name': 'toto',
+            'active': True,
+            'colour': '#012345',
         },
         {
             'source_point': [-1, -2, -3.5],

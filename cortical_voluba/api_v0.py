@@ -46,6 +46,8 @@ class LandmarkPairSchema(Schema):
                                required=True)
     target_point = fields.List(fields.Float, validate=Length(equal=3),
                                required=True)
+    active = fields.Boolean(default=True)
+    name = fields.String()
 
 
 class AlignmentComputationRequestSchema(Schema):
@@ -59,8 +61,10 @@ class AlignmentComputationRequestSchema(Schema):
             fields.Float,
             validate=Length(equal=4)
         ), validate=Length(min=3, max=4), required=True)
-    landmark_pairs = fields.Nested(LandmarkPairSchema, many=True,
-                                   required=True)
+    landmark_pairs = fields.Nested(
+        LandmarkPairSchema,
+        many=True, unknown=marshmallow.EXCLUDE, required=True
+    )
 
 
 @bp.route('/depth-map-computation/', methods=['POST'])
