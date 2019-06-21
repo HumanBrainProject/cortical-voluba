@@ -21,6 +21,7 @@ from flask import abort, current_app, jsonify, make_response, request, url_for
 import flask_cors
 import marshmallow
 from marshmallow import Schema, fields
+from marshmallow.validate import Length
 import requests
 from werkzeug.local import LocalProxy
 
@@ -34,24 +35,30 @@ bp = flask.Blueprint('api_v0', __name__, url_prefix='/v0')
 
 
 class DepthMapComputationRequestSchema(Schema):
-    image_service_base_url = fields.Url(required=True)
+    image_service_base_url = fields.Url(
+        schemes={'http', 'https'}, required=True
+    )
     segmentation_name = fields.String(required=True)
 
 
 class LandmarkPairSchema(Schema):
-    source_point = fields.Tuple((fields.Float, fields.Float, fields.Float),
-                                required=True)
-    target_point = fields.Tuple((fields.Float, fields.Float, fields.Float),
-                                required=True)
+    source_point = fields.List(fields.Float, validate=Length(equal=3),
+                               required=True)
+    target_point = fields.List(fields.Float, validate=Length(equal=3),
+                               required=True)
 
 
 class AlignmentComputationRequestSchema(Schema):
-    image_service_base_url = fields.Url(required=True)
+    image_service_base_url = fields.Url(
+        schemes={'http', 'https'}, required=True
+    )
     image_name = fields.String(required=True)
     depth_map_name = fields.String(required=True)
-    # TODO validate that transformation_matrix is a 4×4 or 3×4 matrix
-    transformation_matrix = fields.List(fields.List(fields.Float),
-                                        required=True)
+    transformation_matrix = fields.List(
+        fields.List(
+            fields.Float,
+            validate=Length(equal=4)
+        ), validate=Length(min=3, max=4), required=True)
     landmark_pairs = fields.Nested(LandmarkPairSchema, many=True,
                                    required=True)
 
