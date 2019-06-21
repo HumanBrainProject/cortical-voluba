@@ -133,7 +133,7 @@ def create_app(test_config=None):
         # TODO: do I need to add supports_credentials to accept the
         # Authorization header?
         flask_cors.CORS(app, origins=app.config['CORS_ORIGINS'],
-                        allow_headers=['Authorization'])
+                        allow_headers=['Authorization', 'Content-Type'])
 
     # Celery must be initialized before the tasks module is imported, i.e.
     # before the API modules.
