@@ -17,7 +17,7 @@
 # along with cortical-voluba. If not, see <https://www.gnu.org/licenses/>.
 
 import flask
-from flask import current_app, jsonify, request, url_for
+from flask import abort, current_app, jsonify, make_response, request, url_for
 import flask_cors
 import marshmallow
 from marshmallow import Schema, fields
@@ -36,6 +36,24 @@ bp = flask.Blueprint('api_v0', __name__, url_prefix='/v0')
 class DepthMapComputationRequestSchema(Schema):
     image_service_base_url = fields.Url(required=True)
     segmentation_name = fields.String(required=True)
+
+
+class LandmarkPairSchema(Schema):
+    source_point = fields.Tuple((fields.Float, fields.Float, fields.Float),
+                                required=True)
+    target_point = fields.Tuple((fields.Float, fields.Float, fields.Float),
+                                required=True)
+
+
+class AlignmentComputationRequestSchema(Schema):
+    image_service_base_url = fields.Url(required=True)
+    image_name = fields.String(required=True)
+    depth_map_name = fields.String(required=True)
+    # TODO validate that transformation_matrix is a 4×4 or 3×4 matrix
+    transformation_matrix = fields.List(fields.List(fields.Float),
+                                        required=True)
+    landmark_pairs = fields.Nested(LandmarkPairSchema, many=True,
+                                   required=True)
 
 
 @bp.route('/depth-map-computation/', methods=['POST'])
@@ -58,36 +76,7 @@ def create_depth_map_computation():
 
     client = image_service.ImageServiceClient(image_service_base_url,
                                               auth=auth)
-    try:
-        image_info = client.get_image_info(segmentation_name)
-    except requests.HTTPError as e:
-        if e.response.status_code == 401:
-            return jsonify({
-                'errors': [e.response.text],
-            }), 401
-        logger.exception('The image service responded with an error')
-        return jsonify({
-            'errors': ['The image service responded with error {0} ({1})'
-                       .format(e.response.status_code, e.response.text)],
-            'debug': str(e.__dict__)
-        }), 500
-    except requests.RequestException:
-        logger.exception('Cannot access the image service')
-        return jsonify({
-            'errors': ['Cannot access the image service'],
-        }), 500
-
-    if image_info is None:
-        return jsonify({
-            'errors': ["Cannot find an image named '{0}' on the image service"
-                       .format(segmentation_name)],
-        }), 400
-
-    if image_info['extra']['neuroglancer'].get('type') != 'segmentation':
-        return jsonify({
-            'errors': ["The image named '{0}' is not a segmentation"
-                       .format(segmentation_name)],
-        }), 400
+    verify_image_on_image_service(client, segmentation_name, 'segmentation')
 
     logger.debug('Submitting Celery job with params=%s', params)
     task_result = tasks.depth_map_computation_task.delay(
@@ -105,6 +94,92 @@ def create_depth_map_computation():
 @bp.route('/depth-map-computation/<computation_id>', methods=['GET'])
 def depth_map_computation_status(computation_id):
     task_result = tasks.depth_map_computation_task.AsyncResult(computation_id)
+    return make_computation_task_status_response(task_result)
+
+
+@bp.route('/alignment-computation/', methods=['POST'])
+@flask_cors.cross_origin(allow_headers=['Content-Type'])
+def create_alignment_computation():
+    schema = AlignmentComputationRequestSchema()
+    params = schema.load(request.json)
+
+    image_service_base_url = params['image_service_base_url']
+    image_name = params['image_name']
+    depth_map_name = params['depth_map_name']
+    authorization_header = request.headers.get('Authorization')
+
+    if authorization_header and authorization_header.startswith('Bearer '):
+        bearer_token = authorization_header[len('Bearer '):]
+        auth = image_service.BearerTokenAuth(bearer_token)
+    else:
+        return jsonify({
+            'errors': ['Missing Bearer token Authorization header'],
+        }), 401
+
+    client = image_service.ImageServiceClient(image_service_base_url,
+                                              auth=auth)
+    verify_image_on_image_service(client, image_name, 'image')
+    verify_image_on_image_service(client, depth_map_name, 'image')
+
+    logger.debug('Submitting Celery job with params=%s', params)
+    task_result = tasks.alignment_computation_task.delay(
+        params,
+        bearer_token=bearer_token
+    )
+    logger.debug('Submitted Celery job has id=%s', task_result.id)
+
+    return jsonify({
+        'status_polling_url': url_for('api_v0.alignment_computation_status',
+                                      computation_id=task_result.id),
+    }), 202
+
+
+@bp.route('/alignment-computation/<computation_id>', methods=['GET'])
+def alignment_computation_status(computation_id):
+    task_result = tasks.alignment_computation_task.AsyncResult(computation_id)
+    return make_computation_task_status_response(task_result)
+
+
+@bp.errorhandler(marshmallow.exceptions.ValidationError)
+def handle_validation_error(exc):
+    return jsonify({'errors': exc.messages}), 400
+
+
+def verify_image_on_image_service(client, image_name, expected_type='image'):
+    try:
+        image_info = client.get_image_info(image_name)
+    except requests.HTTPError as e:
+        if e.response.status_code == 401:
+            abort(make_response(jsonify({
+                'errors': [e.response.text],
+            }), 401))
+        logger.exception('The image service responded with an error')
+        abort(make_response(jsonify({
+            'errors': ['The image service responded with error {0} ({1})'
+                       .format(e.response.status_code, e.response.text)],
+            'debug': str(e.__dict__)
+        }), 500))
+    except requests.RequestException:
+        logger.exception('Cannot access the image service')
+        abort(make_response(jsonify({
+            'errors': ['Cannot access the image service'],
+        }), 500))
+
+    if image_info is None:
+        abort(make_response(jsonify({
+            'errors': ["Cannot find an image named '{0}' on the image service"
+                       .format(image_name)],
+        }), 400))
+
+    if (image_info['extra']['neuroglancer'].get('type', 'image')
+            != expected_type):
+        abort(make_response(jsonify({
+            'errors': ["The image named '{0}' is not of 'image' type"
+                       .format(image_name)],
+        }), 400))
+
+
+def make_computation_task_status_response(task_result):
     # TODO test if the task exists, return 404 if not
     # TODO set 'params': task_result.args[0] (but how can I access args??)
     state_message = task_result.state
@@ -128,20 +203,4 @@ def depth_map_computation_status(computation_id):
             'message': state_message,
             'error': True,
         }
-    return jsonify(result), 200
-
-
-@bp.route('/alignment-computation/', methods=['POST'])
-@flask_cors.cross_origin(allow_headers=['Content-Type'])
-def create_alignment_computation():
-    return 'Not implemented yet', 501
-
-
-@bp.route('/alignment-computation/<computation_id>', methods=['GET'])
-def alignment_computation_status(computation_id):
-    return 'Not implemented yet', 501
-
-
-@bp.errorhandler(marshmallow.exceptions.ValidationError)
-def handle_validation_error(exc):
-    return jsonify({'errors': exc.messages}), 400
+    return make_response(jsonify(result), 200)

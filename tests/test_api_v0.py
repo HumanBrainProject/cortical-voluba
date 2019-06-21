@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with cortical-voluba. If not, see <https://www.gnu.org/licenses/>.
 
+import copy
+
 import celery.app.base
 import celery.result
 import pytest
@@ -57,7 +59,7 @@ DUMMY_IMAGE_LIST = [
             "fileSize": 149665752,
             "fileSizeUncompressed": 1296926752,
             "neuroglancer": {
-                "type": "imgmentation",
+                "type": "image",
             },
             "nifti": {},
             "uploaded": "2019-06-04T10:22:49.543194Z",
@@ -67,6 +69,25 @@ DUMMY_IMAGE_LIST = [
             "normalized": "/nifti/s3cr3t/img",
         },
         "name": "img",
+        "visibility": "private",
+    },
+    {
+        "extra": {
+            "data": {},
+            "fileName": "depth_map.nii.gz",
+            "fileSize": 149665752,
+            "fileSizeUncompressed": 1296926752,
+            "neuroglancer": {
+                "type": "image",
+            },
+            "nifti": {},
+            "uploaded": "2019-06-04T10:22:49.543194Z",
+            "warnings": [],
+        },
+        "links": {
+            "normalized": "/nifti/s3cr3t/depthmap",
+        },
+        "name": "depthmap",
         "visibility": "private",
     },
 ]
@@ -171,5 +192,130 @@ def test_create_depth_map_computation_image_service_errors(
             'image_service_base_url': 'http://h.test/b/',
             'segmentation_name': 'seg',
         },)
+    assert response.status_code == 500
+    assert 'errors' in response.json
+
+
+TEST_ALIGNMENT_REQUEST = {
+    'image_service_base_url': 'http://h.test/b/',
+    'image_name': 'img',
+    'depth_map_name': 'depthmap',
+    'transformation_matrix': [[1, 0, 0, 0],
+                              [0, 1.1, 0, -2],
+                              [0, 0, 0.9, 0],
+                              [0, 0, 0, 1]],
+    'landmark_pairs': [
+        {
+            'source_point': [0, 0, 0],
+            'target_point': [1, 1, 1],
+        },
+        {
+            'source_point': [-1, -2, -3.5],
+            'target_point': [0, 0, 1.5],
+        },
+    ],
+}
+
+
+def test_create_alignment_computation(flask_client, requests_mock):
+    requests_mock.get('http://h.test/b/list', json=DUMMY_IMAGE_LIST)
+
+    # Well-behaved request
+    response = flask_client.post(
+        '/v0/alignment-computation/',
+        headers={'Authorization': 'Bearer test'},
+        json=TEST_ALIGNMENT_REQUEST)
+    assert response.status_code == 202
+    assert 'status_polling_url' in response.json
+
+
+def test_create_alignment_computation_request_errors(
+        flask_client, requests_mock):
+    requests_mock.get('http://h.test/b/list', json=DUMMY_IMAGE_LIST)
+
+    # Malformed request errors
+    response = flask_client.post('/v0/alignment-computation/')
+    assert response.status_code == 400
+    assert 'errors' in response.json
+    response = flask_client.post('/v0/alignment-computation/',
+                                 json={})
+    assert response.status_code == 400
+    assert 'errors' in response.json
+
+    # Unauthenticated request error
+    response = flask_client.post(
+        '/v0/alignment-computation/',
+        json=TEST_ALIGNMENT_REQUEST)
+    assert response.status_code == 401
+    assert 'errors' in response.json
+
+
+def test_create_alignment_computation_image_errors(
+        flask_client, requests_mock):
+    requests_mock.get('http://h.test/b/list', json=DUMMY_IMAGE_LIST)
+
+    # Incorrect image referenced on the image service
+    erroneous_request = copy.deepcopy(TEST_ALIGNMENT_REQUEST)
+    erroneous_request['image_name'] = 'nonexistent'
+    response = flask_client.post(
+        '/v0/alignment-computation/',
+        headers={'Authorization': 'Bearer test'},
+        json=erroneous_request)
+    assert response.status_code == 400
+    assert 'errors' in response.json
+
+    erroneous_request = copy.deepcopy(TEST_ALIGNMENT_REQUEST)
+    erroneous_request['image_name'] = 'seg'
+    response = flask_client.post(
+        '/v0/alignment-computation/',
+        headers={'Authorization': 'Bearer test'},
+        json=erroneous_request)
+    assert response.status_code == 400
+    assert 'errors' in response.json
+
+    erroneous_request = copy.deepcopy(TEST_ALIGNMENT_REQUEST)
+    erroneous_request['depth_map_name'] = 'nonexistent'
+    response = flask_client.post(
+        '/v0/alignment-computation/',
+        headers={'Authorization': 'Bearer test'},
+        json=erroneous_request)
+    assert response.status_code == 400
+    assert 'errors' in response.json
+
+    erroneous_request = copy.deepcopy(TEST_ALIGNMENT_REQUEST)
+    erroneous_request['depth_map_name'] = 'seg'
+    response = flask_client.post(
+        '/v0/alignment-computation/',
+        headers={'Authorization': 'Bearer test'},
+        json=erroneous_request)
+    assert response.status_code == 400
+    assert 'errors' in response.json
+
+
+def test_create_alignment_computation_image_service_errors(
+        flask_client, requests_mock):
+    # Forwarding of image service errors to the client
+    requests_mock.get('http://h.test/b/list', status_code=401)
+
+    response = flask_client.post(
+        '/v0/alignment-computation/',
+        headers={'Authorization': 'Bearer wrong'},
+        json=TEST_ALIGNMENT_REQUEST)
+    assert response.status_code == 401
+    assert 'errors' in response.json
+
+    requests_mock.get('http://h.test/b/list', status_code=404)
+    response = flask_client.post(
+        '/v0/alignment-computation/',
+        headers={'Authorization': 'Bearer dummy'},
+        json=TEST_ALIGNMENT_REQUEST)
+    assert response.status_code == 500
+    assert 'errors' in response.json
+
+    requests_mock.get('http://h.test/b/list', exc=requests.ConnectionError)
+    response = flask_client.post(
+        '/v0/alignment-computation/',
+        headers={'Authorization': 'Bearer dummy'},
+        json=TEST_ALIGNMENT_REQUEST)
     assert response.status_code == 500
     assert 'errors' in response.json

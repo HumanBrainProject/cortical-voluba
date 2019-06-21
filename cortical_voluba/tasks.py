@@ -22,6 +22,7 @@ import tempfile
 import shutil
 import subprocess
 import sys
+import time
 
 import celery.utils.log
 from flask import current_app
@@ -73,7 +74,7 @@ def depth_map_computation_task(self, params, *, bearer_token):
         segmentation_name = params['segmentation_name']
         auth = image_service.BearerTokenAuth(bearer_token)
         client = image_service.ImageServiceClient(image_service_base_url,
-                                              auth=auth)
+                                                  auth=auth)
         segmentation_basename = secure_filename(segmentation_name)
         segmentation_path = os.path.join(
             work_dir, segmentation_basename + '.nii.gz')
@@ -153,6 +154,86 @@ def depth_map_computation_task(self, params, *, bearer_token):
                 'image_service_base_url': image_service_base_url,
                 'depth_map_name': depth_map_name,
                 'depth_map_neuroglancer_url': depth_map_neuroglancer_url,
+            },
+        }
+    finally:
+        shutil.rmtree(work_dir)
+
+
+@celery_app.task(bind=True)
+def alignment_computation_task(self, params, *, bearer_token):
+    work_dir = tempfile.mkdtemp(prefix='alignment_')
+    try:
+        image_service_base_url = params['image_service_base_url']
+        image_name = params['image_name']
+        depth_map_name = params['depth_map_name']
+        auth = image_service.BearerTokenAuth(bearer_token)
+        client = image_service.ImageServiceClient(image_service_base_url,
+                                                  auth=auth)
+        image_basename = secure_filename(image_name)
+        depth_map_basename = secure_filename(depth_map_name)
+        image_path = os.path.join(
+            work_dir, image_basename + '.nii.gz')
+        depth_map_path = os.path.join(
+            work_dir, depth_map_basename + '.nii.gz')
+
+        self.update_state(state='PROGRESS', meta={
+            'message': 'downloading depth map',
+        })
+        logger.info('downloading depth map to %s', depth_map_path)
+        with open(depth_map_path, 'wb') as f:
+            client.download_compressed_nifti(depth_map_name, f)
+
+        self.update_state(state='PROGRESS', meta={
+            'message': 'downloading image',
+        })
+        logger.info('downloading image to %s', image_path)
+        with open(depth_map_path, 'wb') as f:
+            client.download_compressed_nifti(depth_map_name, f)
+
+        self.update_state(state='PROGRESS', meta={
+            'message': 'computing alignment (MOCK)',
+        })
+        time.sleep(5)  # MOCK
+
+        self.update_state(state='PROGRESS', meta={
+            'message': 'resampling the image (MOCK)',
+        })
+        resampled_image_path = os.path.join(
+            work_dir, depth_map_basename + '-resampled.nii.gz')
+        shutil.copy(image_path, resampled_image_path)  # MOCK
+        time.sleep(2)  # MOCK
+
+        self.update_state(state='PROGRESS', meta={
+            'message': 'uploading the resampled image',
+        })
+        logger.info('uploading the resampled image')
+        resampled_image_filename = (
+            image_basename + '-transformed-'
+            + datetime_now_str() + '.nii.gz'
+        )
+        with open(resampled_image_path, 'rb') as f:
+            resampled_image_name, _ = client.upload_image_and_get_name(
+                f, file_name=resampled_image_filename)
+
+        try:
+            resampled_image_info = client.get_image_info(resampled_image_name)
+            if resampled_image_info:
+                resampled_image_neuroglancer_url = (
+                    resampled_image_info['links']['normalized']
+                )
+        except Exception:
+            logger.exception('Failed to retrieve Neuroglancer URL of the '
+                             'depth map named %s', resampled_image_name)
+            resampled_image_neuroglancer_url = None
+
+        return {
+            'message': 'success',
+            'results': {
+                'image_service_base_url': image_service_base_url,
+                'transformed_image_name': resampled_image_name,
+                'transformed_image_neuroglancer_url':
+                resampled_image_neuroglancer_url,
             },
         }
     finally:
