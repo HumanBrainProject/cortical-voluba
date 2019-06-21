@@ -64,7 +64,7 @@ class AlignmentComputationRequestSchema(Schema):
 
 
 @bp.route('/depth-map-computation/', methods=['POST'])
-@flask_cors.cross_origin(allow_headers=['Content-Type'])
+@flask_cors.cross_origin(allow_headers=['Authorization', 'Content-Type'])
 def create_depth_map_computation():
     schema = DepthMapComputationRequestSchema()
     params = schema.load(request.json)
@@ -105,7 +105,7 @@ def depth_map_computation_status(computation_id):
 
 
 @bp.route('/alignment-computation/', methods=['POST'])
-@flask_cors.cross_origin(allow_headers=['Content-Type'])
+@flask_cors.cross_origin(allow_headers=['Authorization', 'Content-Type'])
 def create_alignment_computation():
     schema = AlignmentComputationRequestSchema()
     params = schema.load(request.json)
