@@ -22,6 +22,7 @@ import tempfile
 import shutil
 import subprocess
 import sys
+from urllib.parse import urljoin
 
 import celery.utils.log
 from flask import current_app
@@ -166,7 +167,8 @@ def depth_map_computation_task(self, params, *, bearer_token):
             if depth_map_info:
                 depth_map_neuroglancer_url = (
                     'precomputed://'
-                    + depth_map_info['links']['normalized']
+                    + urljoin(image_service_base_url,
+                              depth_map_info['links']['normalized'])
                 )
         except Exception:
             logger.exception('Failed to retrieve Neuroglancer URL of the '
@@ -249,7 +251,8 @@ def alignment_computation_task(self, params, *, bearer_token):
             if resampled_image_info:
                 resampled_image_neuroglancer_url = (
                     'precomputed://'
-                    + resampled_image_info['links']['normalized']
+                    + urljoin(image_service_base_url,
+                              resampled_image_info['links']['normalized'])
                 )
         except Exception:
             logger.exception('Failed to retrieve Neuroglancer URL of the '
