@@ -118,6 +118,28 @@ def depth_map_computation_task(self, params, *, bearer_token):
         subprocess.check_call(command, env=system_env)
 
         self.update_state(state='PROGRESS', meta={
+            'message': 'Removing NaNs and clamping depth values',
+        })
+        logger.info('Removing NaNs and clamping depth values in %s',
+                    depth_map_path)
+        command = [current_app.config['BV_ENV_PATH'],
+                   'AimsRemoveNaN',
+                   '-np', '--value', '0.5',
+                   '-i', depth_map_path,
+                   '-o', depth_map_path]
+        logger.debug('Running %s', command)
+        subprocess.check_call(command, env=system_env)
+        command = [current_app.config['BV_ENV_PATH'],
+                   'AimsThreshold',
+                   '-m', 'be', '--clip',
+                   '-t', '0',
+                   '-u', '1',
+                   '--input', depth_map_path,
+                   '--output', depth_map_path]
+        logger.debug('Running %s', command)
+        subprocess.check_call(command, env=system_env)
+
+        self.update_state(state='PROGRESS', meta={
             'message': 'uploading the depth map',
         })
         logger.info('uploading the depth map')
