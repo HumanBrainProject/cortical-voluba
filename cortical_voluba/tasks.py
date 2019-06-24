@@ -213,8 +213,8 @@ def alignment_computation_task(self, params, *, bearer_token):
             'message': 'downloading image',
         })
         logger.info('downloading image to %s', image_path)
-        with open(depth_map_path, 'wb') as f:
-            client.download_compressed_nifti(depth_map_name, f)
+        with open(image_path, 'wb') as f:
+            client.download_compressed_nifti(image_name, f)
 
         self.update_state(state='PROGRESS', meta={
             'message': 'computing alignment (MOCK)',
