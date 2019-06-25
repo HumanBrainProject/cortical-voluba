@@ -266,6 +266,7 @@ def alignment_computation_task(self, params, *, bearer_token):
                 'transformed_image_name': resampled_image_name,
                 'transformed_image_neuroglancer_url':
                 resampled_image_neuroglancer_url,
+                'transformation_matrix': params['transformation_matrix'],
             },
         }
     finally:
