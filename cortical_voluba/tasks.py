@@ -71,11 +71,10 @@ def escape_virtual_env(env):
 def depth_map_computation_task(self, params, *, bearer_token):
     work_dir = tempfile.mkdtemp(prefix='depth_map_')
     try:
-        image_service_base_url = params['image_service_base_url']
         segmentation_name = params['segmentation_name']
         auth = image_service.BearerTokenAuth(bearer_token)
-        client = image_service.ImageServiceClient(image_service_base_url,
-                                                  auth=auth)
+        client = image_service.ImageServiceClient(
+            params['image_service_base_url'], auth=auth)
         segmentation_basename = secure_filename(segmentation_name)
         segmentation_path = os.path.join(
             work_dir, segmentation_basename + '.nii.gz')
@@ -167,7 +166,7 @@ def depth_map_computation_task(self, params, *, bearer_token):
             if depth_map_info:
                 depth_map_neuroglancer_url = (
                     'precomputed://' + urljoin(
-                        image_service_base_url,
+                        client.base_url,  # guaranteed to have trailing slash
                         depth_map_info['links']['normalized'].lstrip('/')
                     )
                 )
@@ -179,7 +178,7 @@ def depth_map_computation_task(self, params, *, bearer_token):
         return {
             'message': 'success',
             'results': {
-                'image_service_base_url': image_service_base_url,
+                'image_service_base_url': client.base_url,
                 'depth_map_name': depth_map_name,
                 'depth_map_neuroglancer_url': depth_map_neuroglancer_url,
             },
@@ -192,12 +191,11 @@ def depth_map_computation_task(self, params, *, bearer_token):
 def alignment_computation_task(self, params, *, bearer_token):
     work_dir = tempfile.mkdtemp(prefix='alignment_')
     try:
-        image_service_base_url = params['image_service_base_url']
         image_name = params['image_name']
         depth_map_name = params['depth_map_name']
         auth = image_service.BearerTokenAuth(bearer_token)
-        client = image_service.ImageServiceClient(image_service_base_url,
-                                                  auth=auth)
+        client = image_service.ImageServiceClient(
+            params['image_service_base_url'], auth=auth)
         image_basename = secure_filename(image_name)
         depth_map_basename = secure_filename(depth_map_name)
         image_path = os.path.join(
@@ -252,7 +250,7 @@ def alignment_computation_task(self, params, *, bearer_token):
             if resampled_image_info:
                 resampled_image_neuroglancer_url = (
                     'precomputed://' + urljoin(
-                        image_service_base_url,
+                        client.base_url,  # guaranteed to have trailing slash
                         resampled_image_info['links']['normalized'].lstrip('/')
                     )
                 )
@@ -264,7 +262,7 @@ def alignment_computation_task(self, params, *, bearer_token):
         return {
             'message': 'success',
             'results': {
-                'image_service_base_url': image_service_base_url,
+                'image_service_base_url': client.base_url,
                 'transformed_image_name': resampled_image_name,
                 'transformed_image_neuroglancer_url':
                 resampled_image_neuroglancer_url,
