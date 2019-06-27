@@ -124,7 +124,7 @@ def estimate_deformation(depth_map_path, transformation_matrix, landmark_pairs,
                                                   template_depth_map_path),
         # TODO add landmark-based metric
         '--transform', 'SyN[0.1,3,0]',
-        '--convergence', '[200x100x100,1e-6,10]',
+        '--convergence', '[500x500x500,1e-6,10]',
         '--shrink-factors', '4x2x1',
         '--smoothing-sigmas', '2x1x0vox',
         '--output', 'cortical',
