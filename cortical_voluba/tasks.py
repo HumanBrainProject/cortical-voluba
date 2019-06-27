@@ -218,7 +218,7 @@ def alignment_computation_task(self, params, *, bearer_token):
             client.download_compressed_nifti(image_name, f)
 
         self.update_state(state='PROGRESS', meta={
-            'message': 'computing alignment (MOCK)',
+            'message': 'computing alignment',
         })
         alignment.estimate_deformation(depth_map_path,
                                        params['transformation_matrix'],
@@ -226,7 +226,7 @@ def alignment_computation_task(self, params, *, bearer_token):
                                        work_dir=work_dir)
 
         self.update_state(state='PROGRESS', meta={
-            'message': 'resampling the image (MOCK)',
+            'message': 'resampling the image',
         })
         resampled_image_path = os.path.join(
             work_dir, depth_map_basename + '-resampled.nii.gz')

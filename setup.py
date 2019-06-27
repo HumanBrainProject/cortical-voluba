@@ -72,6 +72,8 @@ setuptools.setup(
         "celery ~= 4.3",
         "redis",
         "marshmallow >= 3.0.0rc7",
+        "numpy",
+        "nibabel",
     ],
     python_requires="~= 3.5",
     extras_require={

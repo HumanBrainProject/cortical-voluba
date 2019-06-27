@@ -1,4 +1,4 @@
-FROM ylep/highres-cortex:latest
+FROM ylep/highres-cortex-ants:latest
 
 ###############################
 # 1. Install packages as root #
