@@ -153,7 +153,6 @@ def create_app(test_config=None):
 
     if app.config.get('PROXY_FIX'):
         from werkzeug.middleware.proxy_fix import ProxyFix
-        # App is behind one proxy that sets the -For and -Host headers.
-        app = ProxyFix(app, **app.config['PROXY_FIX'])
+        app.wsgi_app = ProxyFix(app.wsgi_app, **app.config['PROXY_FIX'])
 
     return app

@@ -26,3 +26,34 @@ def test_config():
 def test_source_link(flask_client):
     response = flask_client.get('/source')
     assert response.status_code == 302
+
+
+def test_proxy_fix():
+    from cortical_voluba import create_app
+    app = create_app(test_config={
+        'TESTING': True,
+        'PROXY_FIX': {
+            'x_for': 1,
+            'x_proto': 1,
+            'x_host': 1,
+            'x_port': 1,
+            'x_prefix': 1,
+        },
+    })
+    called = False
+    @app.route('/test')
+    def test():
+        nonlocal called
+        from flask import request
+        assert request.url == 'https://h.test:1234/toto/test'
+        called = True
+        return ''
+    client = app.test_client()
+    client.get('/test', headers={
+        'X-Forwarded-For': '1.2.3.4',
+        'X-Forwarded-Proto': 'https',
+        'X-Forwarded-Host': 'h.test',
+        'X-Forwarded-Port': '1234',
+        'X-Forwarded-Prefix': '/toto',
+    })
+    assert called
