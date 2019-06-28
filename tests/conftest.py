@@ -25,10 +25,9 @@ import cortical_voluba
 def flask_app():
     app = cortical_voluba.create_app(test_config={
         'TESTING': True,
-        'CELERY_BROKER_URL': None,
-        'CELERY_RESULT_BACKEND': None,
+        'CELERY_BROKER_URL': 'disabled://',
+        'CELERY_RESULT_BACKEND': 'disabled://',
     })
-
     return app
 
 

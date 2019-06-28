@@ -19,6 +19,7 @@
 import copy
 
 import celery.app.base
+import celery.backends.base
 import celery.result
 import pytest
 import requests
@@ -322,3 +323,81 @@ def test_create_alignment_computation_image_service_errors(
         json=TEST_ALIGNMENT_REQUEST)
     assert response.status_code == 500
     assert 'errors' in response.json
+
+
+class MockBackend(celery.backends.base.KeyValueStoreBackend):
+    persistent = False
+
+    def __init__(self, *args, **kwargs):
+        self._store = {}
+        super().__init__(*args, **kwargs)
+
+    def get(self, key):
+        return self._store.get(key)
+
+    def set(self, key, value):
+        self._store[key] = value
+
+    def delete(self, key):
+        del self._store[key]
+
+
+@pytest.mark.parametrize('computation_type', ['depth-map', 'alignment'])
+def test_computation_status(monkeypatch, flask_client, computation_type):
+    from cortical_voluba.celery import celery_app
+    mock_backend = MockBackend(celery_app)
+    monkeypatch.setattr(celery_app, 'backend', mock_backend)
+    endpoint_url = '/v0/{0}-computation/dummy_id'.format(computation_type)
+
+    # Task in PENDING state
+    response = flask_client.get(endpoint_url)
+    assert response.status_code == 200
+    assert response.json['finished'] is False
+    assert 'message' in response.json
+    assert 'error' not in response.json
+    assert 'results' not in response.json
+
+    mock_backend.mark_as_started('dummy_id')
+    response = flask_client.get(endpoint_url)
+    assert response.status_code == 200
+    assert response.json['finished'] is False
+    assert 'message' in response.json
+    assert 'error' not in response.json
+    assert 'results' not in response.json
+
+    mock_backend.store_result('dummy_id', {
+        'message': 'toto',
+    }, 'PROGRESS')
+    response = flask_client.get(endpoint_url)
+    assert response.status_code == 200
+    assert response.json['finished'] is False
+    assert 'toto' in response.json['message']
+    assert 'error' not in response.json
+    assert 'results' not in response.json
+
+    mock_backend.mark_as_retry('dummy_id', None)
+    response = flask_client.get(endpoint_url)
+    assert response.status_code == 200
+    assert response.json['finished'] is False
+    assert 'message' in response.json
+    assert 'error' not in response.json
+    assert 'results' not in response.json
+
+    mock_backend.mark_as_done('dummy_id', {
+        'message': 'success',
+        'results': 'placeholder',
+    })
+    response = flask_client.get(endpoint_url)
+    assert response.status_code == 200
+    assert response.json['finished'] is True
+    assert 'message' in response.json
+    assert response.json['results'] == 'placeholder'
+    assert 'error' not in response.json
+
+    mock_backend.mark_as_failure('dummy_id', Exception('toto'))
+    response = flask_client.get(endpoint_url)
+    assert response.status_code == 200
+    assert response.json['finished'] is True
+    assert 'message' in response.json
+    assert response.json['error'] is True
+    assert 'results' not in response.json
