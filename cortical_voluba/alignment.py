@@ -73,10 +73,15 @@ def estimate_deformation(depth_map_path, transformation_matrix, landmark_pairs,
     if numpy.any(incoming_to_template_affine[3] != [0, 0, 0, 1]):
         raise ValueError('The last row of the transformation matrix must be '
                          '[0, 0, 0, 1]')
-    template_points = numpy.array([pair["source_point"]
-                                   for pair in landmark_pairs])
-    incoming_points = numpy.array([pair["target_point"]
-                                   for pair in landmark_pairs])
+    if landmark_pairs:
+        # TODO amend the protocol to clarify the meaning of source/target wrt.
+        # incoming/template
+        template_points = numpy.array([pair["source_point"]
+                                       for pair in landmark_pairs])
+        incoming_points = numpy.array([pair["target_point"]
+                                       for pair in landmark_pairs])
+    else:
+        incoming_points = template_points = numpy.empty((0, 3))
     incoming_points_in_template_space = transform_points(
         incoming_points, incoming_to_template_affine)
     logger.debug('Affine transformation from incoming image to template '
