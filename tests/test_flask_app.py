@@ -16,11 +16,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with cortical-voluba. If not, see <https://www.gnu.org/licenses/>.
 
+import cortical_voluba
+
 
 def test_config():
-    from cortical_voluba import create_app
-    assert not create_app().testing
-    assert create_app(test_config={'TESTING': True}).testing
+    assert not cortical_voluba.create_app().testing
+    assert cortical_voluba.create_app(test_config={'TESTING': True}).testing
 
 
 def test_source_link(flask_client):
@@ -29,8 +30,7 @@ def test_source_link(flask_client):
 
 
 def test_proxy_fix():
-    from cortical_voluba import create_app
-    app = create_app(test_config={
+    app = cortical_voluba.create_app(test_config={
         'TESTING': True,
         'PROXY_FIX': {
             'x_for': 1,
@@ -57,3 +57,15 @@ def test_proxy_fix():
         'X-Forwarded-Prefix': '/toto',
     })
     assert called
+
+
+def test_echo():
+    app = cortical_voluba.create_app(test_config={
+        'TESTING': True,
+    })
+    assert app.test_client().get('/echo').status_code == 404
+    app = cortical_voluba.create_app(test_config={
+        'TESTING': True,
+        'ENABLE_ECHO': True,
+    })
+    assert app.test_client().get('/echo').status_code == 200
