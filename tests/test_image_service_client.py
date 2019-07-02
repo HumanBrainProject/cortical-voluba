@@ -217,3 +217,9 @@ def test_upload_image_and_get_name(requests_mock):
         image_buf, file_name='imagename.nii.gz')
     assert name == 'imagename'
     assert nifti_extra == DUMMY_NIFTI_EXTRA
+
+
+def test_strip_nii_extension():
+    assert image_service.strip_nii_extension('toto.nii') == 'toto'
+    assert image_service.strip_nii_extension('toto.nii.gz') == 'toto'
+    assert image_service.strip_nii_extension('toto.ima') is None

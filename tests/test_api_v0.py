@@ -24,6 +24,8 @@ import celery.result
 import pytest
 import requests
 
+from testdata import DUMMY_IMAGE_LIST
+
 
 @pytest.fixture(autouse=True)
 def prevent_async_celery(monkeypatch):
@@ -31,67 +33,6 @@ def prevent_async_celery(monkeypatch):
     def mock_send_task(self, task_name, *args, **kwargs):
         return celery.result.AsyncResult('dummy_id_for_' + task_name)
     monkeypatch.setattr(celery.app.base.Celery, 'send_task', mock_send_task)
-
-
-DUMMY_IMAGE_LIST = [
-    {
-        "extra": {
-            "data": {},
-            "fileName": "seg.nii.gz",
-            "fileSize": 149665752,
-            "fileSizeUncompressed": 1296926752,
-            "neuroglancer": {
-                "type": "segmentation",
-            },
-            "nifti": {},
-            "uploaded": "2019-06-04T10:22:49.543194Z",
-            "warnings": [],
-        },
-        "links": {
-            "normalized": "/nifti/s3cr3t/seg",
-        },
-        "name": "seg",
-        "visibility": "private",
-    },
-    {
-        "extra": {
-            "data": {},
-            "fileName": "image.nii.gz",
-            "fileSize": 149665752,
-            "fileSizeUncompressed": 1296926752,
-            "neuroglancer": {
-                "type": "image",
-            },
-            "nifti": {},
-            "uploaded": "2019-06-04T10:22:49.543194Z",
-            "warnings": [],
-        },
-        "links": {
-            "normalized": "/nifti/s3cr3t/img",
-        },
-        "name": "img",
-        "visibility": "private",
-    },
-    {
-        "extra": {
-            "data": {},
-            "fileName": "depth_map.nii.gz",
-            "fileSize": 149665752,
-            "fileSizeUncompressed": 1296926752,
-            "neuroglancer": {
-                "type": "image",
-            },
-            "nifti": {},
-            "uploaded": "2019-06-04T10:22:49.543194Z",
-            "warnings": [],
-        },
-        "links": {
-            "normalized": "/nifti/s3cr3t/depthmap",
-        },
-        "name": "depthmap",
-        "visibility": "private",
-    },
-]
 
 
 def test_create_depth_map_computation(flask_client, requests_mock):
@@ -106,7 +47,7 @@ def test_create_depth_map_computation(flask_client, requests_mock):
             'segmentation_name': 'seg',
         },)
     assert response.status_code == 202
-    assert 'status_polling_url' in response.json
+    assert 'dummy_id_for_' in response.json['status_polling_url']
 
 
 def test_create_depth_map_computation_request_errors(
@@ -230,7 +171,7 @@ def test_create_alignment_computation(flask_client, requests_mock):
         headers={'Authorization': 'Bearer test'},
         json=TEST_ALIGNMENT_REQUEST)
     assert response.status_code == 202
-    assert 'status_polling_url' in response.json
+    assert 'dummy_id_for_' in response.json['status_polling_url']
 
 
 def test_create_alignment_computation_request_errors(
