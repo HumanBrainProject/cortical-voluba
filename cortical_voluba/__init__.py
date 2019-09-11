@@ -71,8 +71,13 @@ class DefaultConfig:
     # Set to True to enable the /echo endpoint (for debugging)
     ENABLE_ECHO = False
     # Set up werkzeug.middleware.proxy_fix.ProxyFix with the provided keyword
-    # arguments
+    # arguments, see
+    # https://werkzeug.palletsprojects.com/en/0.15.x/middleware/proxy_fix/
     PROXY_FIX = None
+    # Other variables without a default value:
+    # TEMPLATE_EQUIVOLUMETRIC_DEPTH : the full path to the pre-computed
+    #     equivolumetric depth for the template (normally
+    #     BigBrain_equivolumetric_depth.nii.gz).
 
 
 def create_app(test_config=None):
