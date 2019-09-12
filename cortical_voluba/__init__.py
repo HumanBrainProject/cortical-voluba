@@ -142,8 +142,6 @@ def create_app(test_config=None):
             return ''
 
     if app.config.get('CORS_ORIGINS'):
-        # TODO: do I need to add supports_credentials to accept the
-        # Authorization header?
         flask_cors.CORS(app, origins=app.config['CORS_ORIGINS'],
                         allow_headers=['Authorization', 'Content-Type'])
 
