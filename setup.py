@@ -86,6 +86,7 @@ setuptools.setup(
             "sphinx",
             "tox",
         ],
+        "tests": tests_require,
     },
     setup_requires=pytest_runner,
     tests_require=tests_require,
