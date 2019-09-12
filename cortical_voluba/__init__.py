@@ -86,6 +86,7 @@ def create_app(test_config=None):
     # http://flask.pocoo.org/docs/1.0/logging/#basic-configuration
     logging.config.dictConfig({
         'version': 1,
+        'disable_existing_loggers': False,  # preserve Gunicorn loggers
         'formatters': {'default': {
             'format': '[%(asctime)s] [%(process)d] %(levelname)s '
                       'in %(module)s: %(message)s',
