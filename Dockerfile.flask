@@ -4,7 +4,7 @@ FROM python:3
 # 1. Install packages as root #
 ###############################
 
-RUN python3 -m pip install --no-cache-dir gunicorn[eventlet]
+RUN python3 -m pip install --no-cache-dir gunicorn
 
 COPY . /source
 RUN python3 -m pip install --no-cache-dir /source
@@ -31,4 +31,4 @@ USER user
 ###########################
 ENV FLASK_APP cortical_voluba
 EXPOSE 8080
-CMD gunicorn --access-logfile=- --preload 'cortical_voluba:create_app()' --bind=:8080 --worker-class=eventlet
+CMD gunicorn --access-logfile=- --preload 'cortical_voluba:create_app()' --bind=:8080
