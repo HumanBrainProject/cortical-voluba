@@ -35,6 +35,19 @@ For the record, here are the steps that were used to create this OpenShift proje
 
       #. Hit `Save`
 
+   #. Add post-build tests and tweak build configuration
+
+      #. Go to `Builds` -> `Builds` -> `cortical-voluba-flask` -> `Actions` -> `Edit`. Click on `advanced options`.
+      #. Under `Image Configuration`, check `Always pull the builder image from the docker registry, even if it is present locally`
+      #. Under `Post-Commit Hooks`, check `Run build hooks after image is built`. Choose `Hook Type` = `Shell Script` and enter the following Script::
+
+           set -e
+           python3 -m pip install pytest
+           cd /source
+           python3 -m pytest
+
+      #. Hit `Save`
+
    #. Trigger the build by hitting `Start Build`
    #. Configure the Flask instance
 
@@ -83,12 +96,25 @@ For the record, here are the steps that were used to create this OpenShift proje
    #. Follow the instructions to configure the GitHub webhook
    #. Change the build configuration to use the `Docker` build strategy:
 
-      #. Go to `Builds` -> `Builds` -> `cortical-voluba-flask` -> `Actions` -> `Edit YAML`
+      #. Go to `Builds` -> `Builds` -> `cortical-voluba-celery` -> `Actions` -> `Edit YAML`
       #. Replace the contents of the `strategy` key by::
 
            dockerStrategy:
              dockerfilePath: Dockerfile.celery
            type: Docker
+
+      #. Hit `Save`
+
+   #. Add post-build tests and tweak build configuration
+
+      #. Go to `Builds` -> `Builds` -> `cortical-voluba-celery` -> `Actions` -> `Edit`. Click on `advanced options`.
+      #. Under `Image Configuration`, check `Always pull the builder image from the docker registry, even if it is present locally`
+      #. Under `Post-Commit Hooks`, check `Run build hooks after image is built`. Choose `Hook Type` = `Shell Script` and enter the following Script::
+
+           set -e
+           python3 -m pip install pytest
+           cd /source
+           python3 -m pytest
 
       #. Hit `Save`
 
@@ -106,7 +132,7 @@ For the record, here are the steps that were used to create this OpenShift proje
 
    #. Create a volume to hold the static data (equivolumetric depth for BigBrain)
 
-      #. Go to `Applications` -> `Deployments` -> `cortical-voluba-flask` -> `Configuration`
+      #. Go to `Applications` -> `Deployments` -> `cortical-voluba-celery` -> `Configuration`
       #. Under `Volumes`, hit `Add Storage`
       #. Hit `Create Storage`
       #. Set `Name` = `static-data`, `Size` = `1 GiB`
