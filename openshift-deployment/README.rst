@@ -42,7 +42,7 @@ For the record, here are the steps that were used to create this OpenShift proje
       #. Under `Post-Commit Hooks`, check `Run build hooks after image is built`. Choose `Hook Type` = `Shell Script` and enter the following Script::
 
            set -e
-           python3 -m pip install /source[tests]
+           python3 -m pip install --user /source[tests]
            cd /source
            python3 -m pytest
 
@@ -112,7 +112,7 @@ For the record, here are the steps that were used to create this OpenShift proje
       #. Under `Post-Commit Hooks`, check `Run build hooks after image is built`. Choose `Hook Type` = `Shell Script` and enter the following Script::
 
            set -e
-           python3 -m pip install /source[tests]
+           python3 -m pip install --user /source[tests]
            cd /source
            python3 -m pytest
 
