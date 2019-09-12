@@ -31,4 +31,4 @@ USER user
 ###########################
 ENV FLASK_APP cortical_voluba
 EXPOSE 8080
-CMD gunicorn --access-logfile=- 'cortical_voluba:create_app()' --bind=:8080
+CMD gunicorn --access-logfile=- --preload 'cortical_voluba:create_app()' --bind=:8080
