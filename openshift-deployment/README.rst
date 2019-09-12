@@ -80,6 +80,12 @@ For the record, here are the steps that were used to create this OpenShift proje
          - `INSTANCE_PATH` = `/instance`
          - `REDIS_PASSWORD` from Secret `redis/database-password`
 
+   #. Add Health Checks
+      #. Go to `Applications` -> `Deployments` -> `cortical-voluba-flask` -> `Actions` -> `Edit Health Checks`
+      #. Add a `Readiness Probe` of type `HTTP GET`, using `Path` = `/health`, setting some `Initial Delay` (e.g. 5 seconds)
+      #. Add a `Liveness Probe` of type `HTTP GET`, using `Path` = `/health`, setting a long `Timeout` (e.g. 10 seconds)
+      #. Hit `Save`
+
 #. Configure the Celery instance
 
    #. Add to Project -> Browse Catalog
@@ -154,6 +160,8 @@ For the record, here are the steps that were used to create this OpenShift proje
            - mountPath: /static-data
              name: static-data
              readOnly: true
+
+   #. Add Health Checks (TODO: figure out how to check for celery worker, I could not figure out how to use ``celery inspect ping``).
 
 #. Configure the Redis instance
 

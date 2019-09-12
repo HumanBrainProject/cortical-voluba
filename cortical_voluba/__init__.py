@@ -125,6 +125,12 @@ def create_app(test_config=None):
     def source():
         return flask.redirect(SOURCE_URL)
 
+    # Return success if the app is ready to serve requests. Used in OpenShift
+    # health checks.
+    @app.route("/health")
+    def health():
+        return '', 200
+
     if app.config.get('ENABLE_ECHO'):
         @app.route('/echo')
         def echo():
