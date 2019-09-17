@@ -18,7 +18,6 @@
 
 import flask
 from flask import abort, current_app, jsonify, make_response, request, url_for
-import flask_cors
 import marshmallow
 from marshmallow import Schema, fields
 from marshmallow.validate import Length
@@ -68,7 +67,6 @@ class AlignmentComputationRequestSchema(Schema):
 
 
 @bp.route('/depth-map-computation/', methods=['POST'])
-@flask_cors.cross_origin(allow_headers=['Authorization', 'Content-Type'])
 def create_depth_map_computation():
     schema = DepthMapComputationRequestSchema()
     params = schema.load(request.json)
@@ -109,7 +107,6 @@ def depth_map_computation_status(computation_id):
 
 
 @bp.route('/alignment-computation/', methods=['POST'])
-@flask_cors.cross_origin(allow_headers=['Authorization', 'Content-Type'])
 def create_alignment_computation():
     schema = AlignmentComputationRequestSchema()
     params = schema.load(request.json)
