@@ -1,12 +1,9 @@
 Deployment on openshift-dev.hbp.eu
 ==================================
 
-The deployment configuration is saved to `openshift-dev-export.yaml` by running
-``oc get -o yaml --export is,bc,dc,svc,route,pvc``. See
-https://collab.humanbrainproject.eu/#/collab/38996/nav/270508 for instructions
-for restoring a working deployment using this snapshot.
+The deployment configuration is saved to `openshift-dev-export.yaml` by running ``oc get -o yaml --export is,bc,dc,svc,route,pvc,cm`` (`status` information is stripped manually). See https://collab.humanbrainproject.eu/#/collab/38996/nav/270508 and [hbp-spatial-backend](https://github.com/HumanBrainProject/hbp-spatial-backend/tree/master/openshift-deployment#deploying-to-production) for instructions for restoring a working deployment using this snapshot.
 
-For the record, here are the steps that were used to create this OpenShift project:
+For the record, here are the steps that were used to create this OpenShift project on https://openshift-dev.hbp.eu/:
 
 #. Create the project / navigate to the project
 #. Configure the Flask instance
@@ -82,8 +79,8 @@ For the record, here are the steps that were used to create this OpenShift proje
 
    #. Add Health Checks
       #. Go to `Applications` -> `Deployments` -> `cortical-voluba-flask` -> `Actions` -> `Edit Health Checks`
-      #. Add a `Readiness Probe` of type `HTTP GET`, using `Path` = `/health`, setting some `Initial Delay` (e.g. 5 seconds)
-      #. Add a `Liveness Probe` of type `HTTP GET`, using `Path` = `/health`, setting a long `Timeout` (e.g. 10 seconds)
+      #. Add a `Readiness Probe` of type `HTTP GET`, using `Path` = `/health`, setting some `Initial Delay` (e.g. 5 seconds) and `Timeout` (e.g. 10 seconds)
+      #. Add a `Liveness Probe` of type `HTTP GET`, using `Path` = `/health`, setting a long `Timeout` (e.g. 60 seconds)
       #. Hit `Save`
 
 #. Configure the Celery instance

@@ -25,7 +25,6 @@ import logging.config
 import os
 
 import flask
-import flask_cors
 
 
 # Version used by setup.py and docs/conf.py (parsed with a regular expression).
@@ -66,7 +65,7 @@ class DefaultConfig:
     # Passed as the 'origins' parameter to flask_cors.CORS, see
     # https://flask-cors.readthedocs.io/en/latest/api.html#flask_cors.CORS
     CORS_ORIGINS = r'https://voluba(-dev)?\.apps(-dev)?\.hbp\.eu'
-    # Set the full path to bv_env if it not in the system PATH
+    # Set the full path to bv_env if it is not in the system PATH
     BV_ENV_PATH = 'bv_env'
     # Set to True to enable the /echo endpoint (for debugging)
     ENABLE_ECHO = False
@@ -78,12 +77,14 @@ class DefaultConfig:
     # point to the frontend).
     ROOT_REDIRECT = None
     #
-    # Other variables without a default value:
+    # Other configuration keys without a default value:
     # TEMPLATE_EQUIVOLUMETRIC_DEPTH : the full path to the pre-computed
     #     equivolumetric depth for the template (normally
     #     BigBrain_equivolumetric_depth.nii.gz).
 
 
+# This function has a magic name which is recognized by flask as a factory for
+# the main app.
 def create_app(test_config=None):
     """Instantiate the cortical-voluba Flask application."""
     # logging configuration inspired by
@@ -114,6 +115,18 @@ def create_app(test_config=None):
         root_logger.handlers = logging.getLogger('gunicorn.error').handlers
         root_logger.setLevel(logging.getLogger('gunicorn.error').level)
 
+    # Hide Kubernetes health probes from the logs
+    access_logger = logging.getLogger('gunicorn.access')
+    exclude_useragent_re = re.compile(r'kube-probe')
+    access_logger.addFilter(
+        lambda record: not (
+            record.args['h'].startswith('10.')
+            and record.args['m'] == 'GET'
+            and record.args['U'] == '/health'
+            and exclude_useragent_re.search(record.args['a'])
+        )
+    )
+
     app = flask.Flask(__name__,
                       instance_path=os.environ.get('INSTANCE_PATH'),
                       instance_relative_config=True)
@@ -125,6 +138,12 @@ def create_app(test_config=None):
     else:
         # load the test config if passed in
         app.config.from_mapping(test_config)
+
+    # ensure that the instance folder exists
+    try:
+        os.makedirs(app.instance_path)
+    except OSError:
+        pass
 
     if app.config.get('ROOT_REDIRECT'):
         @app.route('/')
@@ -151,6 +170,7 @@ def create_app(test_config=None):
             return ''
 
     if app.config.get('CORS_ORIGINS'):
+        import flask_cors
         flask_cors.CORS(app, origins=app.config['CORS_ORIGINS'],
                         allow_headers=['Authorization', 'Content-Type'])
 
