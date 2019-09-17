@@ -13,9 +13,6 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Workaround for https://github.com/marshmallow-code/marshmallow/issues/1409
-RUN python3 -m pip install --no-cache-dir marshmallow==3.0.5
-
 COPY . /source
 RUN python3 -m pip install --no-cache-dir /source
 
