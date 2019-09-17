@@ -74,6 +74,10 @@ class DefaultConfig:
     # arguments, see
     # https://werkzeug.palletsprojects.com/en/0.15.x/middleware/proxy_fix/
     PROXY_FIX = None
+    # Redirection URL for requests to the root URL of this backend (intended to
+    # point to the frontend).
+    ROOT_REDIRECT = None
+    #
     # Other variables without a default value:
     # TEMPLATE_EQUIVOLUMETRIC_DEPTH : the full path to the pre-computed
     #     equivolumetric depth for the template (normally
@@ -121,6 +125,11 @@ def create_app(test_config=None):
     else:
         # load the test config if passed in
         app.config.from_mapping(test_config)
+
+    if app.config.get('ROOT_REDIRECT'):
+        @app.route('/')
+        def root():
+            return flask.redirect(app.config.get('ROOT_REDIRECT'))
 
     @app.route('/source')
     def source():
