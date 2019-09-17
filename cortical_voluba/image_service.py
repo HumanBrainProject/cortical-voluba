@@ -22,7 +22,7 @@ Based on the current `image service documentation`_.
 
 .. _`image service documentation`: https://docs.google.com/document/d/1Gl30DyjntnVqtZ354OEc7SegdSnUjox2flUJb04MwaA/edit?usp=sharing
 .. default-role:: any
-"""
+"""  # noqa: E501
 
 import cgi
 import gzip

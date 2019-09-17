@@ -14,7 +14,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
-import cortical_voluba
+import cortical_voluba  # noqa: E402
 
 # -- Project information -----------------------------------------------------
 

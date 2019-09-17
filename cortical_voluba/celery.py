@@ -22,7 +22,7 @@ from flask import current_app
 from . import create_app as create_flask_app
 
 
-__all__ = ['make_celery', 'celery_app']
+__all__ = ['create_celery_app']
 
 
 def create_celery_app(flask_app):

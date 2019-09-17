@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with cortical-voluba. If not, see <https://www.gnu.org/licenses/>.
 
-import json
 import logging
 import nibabel
 import numpy

@@ -58,7 +58,8 @@ pytest_runner = ["pytest-runner"] if needs_pytest else []
 setuptools.setup(
     name="cortical-voluba",
     version=find_version("cortical_voluba", "__init__.py"),
-    description="VoluBA backend for non-linear depth-informed alignment of cortical patches",
+    description="VoluBA backend for non-linear depth-informed alignment of "
+                "cortical patches",
     long_description=read("README.rst"),
     long_description_content_type='text/x-rst',
     author="Yann Leprince",
