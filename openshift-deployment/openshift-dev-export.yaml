@@ -11,7 +11,7 @@ items:
       app: cortical-voluba-celery
     name: cortical-voluba-celery
     namespace: cortical-voluba
-    resourceVersion: "17821540"
+    resourceVersion: "19302764"
     selfLink: /apis/image.openshift.io/v1/namespaces/cortical-voluba/imagestreams/cortical-voluba-celery
     uid: 337e1efe-d470-11e9-acd7-fa163e8fd6a1
   spec:
@@ -28,7 +28,7 @@ items:
       app: cortical-voluba-flask
     name: cortical-voluba-flask
     namespace: cortical-voluba
-    resourceVersion: "19255577"
+    resourceVersion: "19297284"
     selfLink: /apis/image.openshift.io/v1/namespaces/cortical-voluba/imagestreams/cortical-voluba-flask
     uid: d6aa8861-d46d-11e9-acd7-fa163e8fd6a1
   spec:
@@ -44,7 +44,7 @@ items:
       app: cortical-voluba-celery
     name: cortical-voluba-celery
     namespace: cortical-voluba
-    resourceVersion: "19255108"
+    resourceVersion: "19303740"
     selfLink: /apis/build.openshift.io/v1/namespaces/cortical-voluba/buildconfigs/cortical-voluba-celery
     uid: 337faf7a-d470-11e9-acd7-fa163e8fd6a1
   spec:
@@ -56,7 +56,10 @@ items:
     postCommit:
       script: |
         set -e
-        python3 -m pip install --user /source[tests]
+        # Without PIP_IGNORE_INSTALLED=0 the Debian version of pip would
+        # re-install all dependencies in the user's home directory
+        # (https://github.com/pypa/pip/issues/4222#issuecomment-417672236)
+        PIP_IGNORE_INSTALLED=0 python3 -m pip install --user /source[tests]
         cd /source
         python3 -m pytest
     resources: {}
@@ -88,7 +91,7 @@ items:
       app: cortical-voluba-flask
     name: cortical-voluba-flask
     namespace: cortical-voluba
-    resourceVersion: "19255110"
+    resourceVersion: "19304005"
     selfLink: /apis/build.openshift.io/v1/namespaces/cortical-voluba/buildconfigs/cortical-voluba-flask
     uid: d6bc3dac-d46d-11e9-acd7-fa163e8fd6a1
   spec:
@@ -100,7 +103,10 @@ items:
     postCommit:
       script: |
         set -e
-        python3 -m pip install --user /source[tests]
+        # Without PIP_IGNORE_INSTALLED=0 the Debian version of pip would
+        # re-install all dependencies in the user's home directory
+        # (https://github.com/pypa/pip/issues/4222#issuecomment-417672236)
+        PIP_IGNORE_INSTALLED=0 python3 -m pip install --user /source[tests]
         cd /source
         python3 -m pytest
     resources: {}
@@ -129,12 +135,12 @@ items:
     annotations:
       openshift.io/generated-by: OpenShiftWebConsole
     creationTimestamp: 2019-09-11T08:43:17Z
-    generation: 19
+    generation: 20
     labels:
       app: cortical-voluba-celery
     name: cortical-voluba-celery
     namespace: cortical-voluba
-    resourceVersion: "17821650"
+    resourceVersion: "19302860"
     selfLink: /apis/apps.openshift.io/v1/namespaces/cortical-voluba/deploymentconfigs/cortical-voluba-celery
     uid: 337e9427-d470-11e9-acd7-fa163e8fd6a1
   spec:
@@ -167,7 +173,7 @@ items:
               secretKeyRef:
                 key: database-password
                 name: redis
-          image: docker-registry.default.svc:5000/cortical-voluba/cortical-voluba-celery@sha256:6014f72cafdd8efaa854dbd573c733d18eb92e0202150425b3536ea9a929b344
+          image: docker-registry.default.svc:5000/cortical-voluba/cortical-voluba-celery@sha256:d0e3f028cb6f054c9074df0b729498e1b545c7a33837fb5c9b450adf43ff0898
           imagePullPolicy: Always
           name: cortical-voluba-celery
           ports:
@@ -205,7 +211,7 @@ items:
           kind: ImageStreamTag
           name: cortical-voluba-celery:latest
           namespace: cortical-voluba
-        lastTriggeredImage: docker-registry.default.svc:5000/cortical-voluba/cortical-voluba-celery@sha256:6014f72cafdd8efaa854dbd573c733d18eb92e0202150425b3536ea9a929b344
+        lastTriggeredImage: docker-registry.default.svc:5000/cortical-voluba/cortical-voluba-celery@sha256:d0e3f028cb6f054c9074df0b729498e1b545c7a33837fb5c9b450adf43ff0898
       type: ImageChange
     - type: ConfigChange
 - apiVersion: apps.openshift.io/v1
@@ -214,12 +220,12 @@ items:
     annotations:
       openshift.io/generated-by: OpenShiftWebConsole
     creationTimestamp: 2019-09-11T08:26:23Z
-    generation: 24
+    generation: 26
     labels:
       app: cortical-voluba-flask
     name: cortical-voluba-flask
     namespace: cortical-voluba
-    resourceVersion: "19255716"
+    resourceVersion: "19297391"
     selfLink: /apis/apps.openshift.io/v1/namespaces/cortical-voluba/deploymentconfigs/cortical-voluba-flask
     uid: d6b32dc8-d46d-11e9-acd7-fa163e8fd6a1
   spec:
@@ -252,7 +258,7 @@ items:
               secretKeyRef:
                 key: database-password
                 name: redis
-          image: docker-registry.default.svc:5000/cortical-voluba/cortical-voluba-flask@sha256:79ebf04c3376fe2432ef11d75fa2a6f72487f533a2445b794edcaf54e3faf919
+          image: docker-registry.default.svc:5000/cortical-voluba/cortical-voluba-flask@sha256:1cd9b8a09fb0611801fe791a1a953c8e2080f47473ec21921becdbb32a73ef03
           imagePullPolicy: Always
           livenessProbe:
             failureThreshold: 3
@@ -303,7 +309,7 @@ items:
           kind: ImageStreamTag
           name: cortical-voluba-flask:latest
           namespace: cortical-voluba
-        lastTriggeredImage: docker-registry.default.svc:5000/cortical-voluba/cortical-voluba-flask@sha256:79ebf04c3376fe2432ef11d75fa2a6f72487f533a2445b794edcaf54e3faf919
+        lastTriggeredImage: docker-registry.default.svc:5000/cortical-voluba/cortical-voluba-flask@sha256:1cd9b8a09fb0611801fe791a1a953c8e2080f47473ec21921becdbb32a73ef03
       type: ImageChange
     - type: ConfigChange
 - apiVersion: apps.openshift.io/v1
