@@ -4,15 +4,17 @@ FROM ylep/highres-cortex-ants:latest
 # 1. Install packages as root #
 ###############################
 
+# Setuptools is needed to install from source
 RUN apt-get update \
     && apt-get install -y --no-install-recommends --no-install-suggests \
         python3 \
         python3-pip \
+        python3-setuptools \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Setuptools is needed to import from source
-RUN python3 -m pip install --no-cache-dir setuptools
+# Workaround for https://github.com/marshmallow-code/marshmallow/issues/1409
+RUN python3 -m pip install --no-cache-dir marshmallow==3.0.5
 
 COPY . /source
 RUN python3 -m pip install --no-cache-dir /source

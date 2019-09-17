@@ -71,7 +71,7 @@ setuptools.setup(
         "Flask-Cors",
         "celery ~= 4.3",
         "redis",
-        "marshmallow >= 3.0.0rc7",
+        "marshmallow ~= 3.0",
         "numpy",
         "nibabel",
     ],
