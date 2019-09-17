@@ -1,16 +1,16 @@
 # Run from the directory that contains this script (docker-highres-cortex)
 
-CASA_DISTRO_DIR=/volatile/bv/casa_distro_repo
+: ${CASA_DEFAULT_REPOSITORY:=/volatile/bv/casa_distro_repo}  # set default value
+export CASA_DEFAULT_REPOSITORY
 
 casa_distro \
-    -r "$CASA_DISTRO_DIR" \
     create \
     distro_name=highres-cortex \
     distro_source=opensource \
     branch=bug_fix \
     system=ubuntu-16.04
 
-cat <<'EOF' > "$CASA_DISTRO_DIR"/highres-cortex/bug_fix_ubuntu-16.04/conf/bv_maker.cfg
+cat <<'EOF' > "$CASA_DEFAULT_REPOSITORY"/highres-cortex/bug_fix_ubuntu-16.04/conf/bv_maker.cfg
 [ source $CASA_SRC ]
   brainvisa brainvisa-cmake $CASA_BRANCH
   brainvisa soma-base $CASA_BRANCH
@@ -37,17 +37,17 @@ cat <<'EOF' > "$CASA_DISTRO_DIR"/highres-cortex/bug_fix_ubuntu-16.04/conf/bv_mak
 EOF
 
 casa_distro \
-    -r "$CASA_DISTRO_DIR" \
+    -r "$CASA_DEFAULT_REPOSITORY" \
     bv_maker \
     distro=highres-cortex \
     branch=bug_fix \
     system=ubuntu-16.04
 
 
-rm -rf "$CASA_DISTRO_DIR"/highres-cortex/bug_fix_ubuntu-16.04/install/*
+rm -rf "$CASA_DEFAULT_REPOSITORY"/highres-cortex/bug_fix_ubuntu-16.04/install/*
 
 casa_distro \
-    -r "$CASA_DISTRO_DIR" \
+    -r "$CASA_DEFAULT_REPOSITORY" \
     run \
     distro=highres-cortex \
     branch=bug_fix \
@@ -55,7 +55,7 @@ casa_distro \
     /bin/sh -c 'cd /casa/build && make install-runtime BRAINVISA_INSTALL_PREFIX=/casa/install'
 
 rm -rf install/
-cp -a "$CASA_DISTRO_DIR"/highres-cortex/bug_fix_ubuntu-16.04/install .
+cp -a "$CASA_DEFAULT_REPOSITORY"/highres-cortex/bug_fix_ubuntu-16.04/install .
 
 DOCKER_IMAGE=highres-cortex:bug_fix_$(date -Id)
 docker build -t $DOCKER_IMAGE .
