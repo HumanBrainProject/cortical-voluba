@@ -13,6 +13,12 @@ A test deployment (following the ``dev`` branch) is deployed on https://cortical
 The public deployments are managed by OpenShift clusters, the relevant configuration is described in `<openshift-deployment/>`_.
 
 
+Documentation
+=============
+
+A `draft API documentation <https://docs.google.com/document/d/1tEcL3rchH6OL-qWFaUQdXy9QU39r7Oh81ayneaurm6k/edit?usp=sharing>`_ is available.
+
+
 Development
 ===========
 
