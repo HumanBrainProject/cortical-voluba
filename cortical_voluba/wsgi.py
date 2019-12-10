@@ -16,5 +16,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with cortical-voluba. If not, see <https://www.gnu.org/licenses/>.
 
+"""Module containing a Flask application singleton for use by a WSGI server."""
+
+
 import cortical_voluba
 application = cortical_voluba.create_app()

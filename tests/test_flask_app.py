@@ -69,3 +69,8 @@ def test_echo():
         'ENABLE_ECHO': True,
     })
     assert app.test_client().get('/echo').status_code == 200
+
+
+def test_wsgi_app():
+    from cortical_voluba.wsgi import application
+    assert application is not None
