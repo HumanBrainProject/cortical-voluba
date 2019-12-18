@@ -58,6 +58,7 @@ rm -rf install/
 cp -a "$CASA_DEFAULT_REPOSITORY"/highres-cortex/bug_fix_ubuntu-16.04/install .
 
 DOCKER_IMAGE=highres-cortex:bug_fix_$(date -Id)
-docker build -t $DOCKER_IMAGE .
+docker build -t "$DOCKER_IMAGE" .
 
-docker save -o $DOCKER_IMAGE.tar $DOCKER_IMAGE
+# Run tests in the installed image
+docker run -it "$DOCKER_IMAGE" python -m highres_cortex.test.test_capsul

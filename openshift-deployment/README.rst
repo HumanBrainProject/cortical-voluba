@@ -1,7 +1,7 @@
 Deployment on openshift-dev.hbp.eu
 ==================================
 
-The deployment configuration is saved to `openshift-dev-export.yaml` by running ``oc get -o yaml --export is,bc,dc,svc,route,pvc,cm`` (`status` information is stripped manually). See https://collab.humanbrainproject.eu/#/collab/38996/nav/270508 and [hbp-spatial-backend](https://github.com/HumanBrainProject/hbp-spatial-backend/tree/master/openshift-deployment#deploying-to-production) for instructions for restoring a working deployment using this snapshot.
+The deployment configuration is saved to `openshift-dev-export.yaml` by running ``oc get -o yaml --export is,bc,dc,svc,route,pvc,cm,horizontalpodautoscaler`` (`status` information is stripped manually). See https://collab.humanbrainproject.eu/#/collab/38996/nav/270508 and [hbp-spatial-backend](https://github.com/HumanBrainProject/hbp-spatial-backend/tree/master/openshift-deployment#deploying-to-production) for instructions for restoring a working deployment using this snapshot.
 
 For the record, here are the steps that were used to create this OpenShift project on https://openshift-dev.hbp.eu/:
 
@@ -139,6 +139,8 @@ For the record, here are the steps that were used to create this OpenShift proje
 
          - `INSTANCE_PATH` = `/instance`
          - `REDIS_PASSWORD` from Secret `redis/database-password`
+
+      #. (optional) Add an Autoscaler so that OpenShift can automatically adapt the number of Celery workers to the number of ongoing computations: go to `Actions` -> `Add Autoscaler`, set `Max pods` to 5, and `CPU Request Target` to 50%. Validate by clicking `Save`.
 
    #. Create a volume to hold the static data (equivolumetric depth for BigBrain)
 
