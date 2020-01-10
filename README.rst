@@ -4,6 +4,10 @@ VoluBA backend for non-linear depth-informed alignment of cortical patches
    :target: https://travis-ci.com/HumanBrainProject/cortical-voluba
    :alt: Travis Build Status
 
+.. image:: https://codecov.io/gh/HumanBrainProject/cortical-voluba/branch/master/graph/badge.svg
+   :target: https://codecov.io/gh/HumanBrainProject/cortical-voluba
+   :alt: Coverage Status
+
 
 Public deployments
 ==================
