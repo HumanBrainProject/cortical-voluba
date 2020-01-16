@@ -16,6 +16,9 @@ RUN apt-get update \
 # Upgrade pip as recommended
 RUN python3 -m pip install --no-cache-dir --upgrade pip
 
+# to deal with non-ASCII characters in source
+ENV LANG=C.UTF-8
+
 COPY . /source
 RUN python3 -m pip install --no-cache-dir /source
 
