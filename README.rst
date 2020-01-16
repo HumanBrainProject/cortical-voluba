@@ -8,6 +8,10 @@ VoluBA backend for non-linear depth-informed alignment of cortical patches
    :target: https://codecov.io/gh/HumanBrainProject/cortical-voluba
    :alt: Coverage Status
 
+.. image:: https://img.shields.io/swagger/valid/3.0?label=OpenAPI&specUrl=https%3A%2F%2Fcortical-voluba.apps-dev.hbp.eu%2Fopenapi.json
+   :target: https://cortical-voluba.apps-dev.hbp.eu/redoc
+   :alt: Swagger Validator
+
 
 Public deployments
 ==================
@@ -20,7 +24,7 @@ The public deployments are managed by OpenShift clusters, the relevant configura
 Documentation
 =============
 
-A `draft API documentation <https://docs.google.com/document/d/1tEcL3rchH6OL-qWFaUQdXy9QU39r7Oh81ayneaurm6k/edit?usp=sharing>`_ is available.
+The API is documented using the OpenAPI standard (a.k.a. Swagger): see `the ReDoc-generated documentation <https://cortical-voluba.apps-dev.hbp.eu/redoc>`_. `A Swagger UI page <https://cortical-voluba.apps-dev.hbp.eu/swagger-ui>`_ is also available for trying out the API.
 
 
 Development
