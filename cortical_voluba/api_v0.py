@@ -37,14 +37,41 @@ bp = flask_smorest.Blueprint(
     description='Draft API of the cortical-voluba backend',
 )
 
+EXAMPLE_IMAGE_SERVICE_URL = 'https://zam10143.zam.kfa-juelich.de/chumni/'
+
 
 class DepthMapComputationRequestSchema(Schema):
     class Meta:
         ordered = True
     image_service_base_url = fields.Url(
-        schemes={'http', 'https'}, required=True
+        schemes={'http', 'https'}, required=True,
+        description='Base URL of the image service.',
+        example='https://zam10143.zam.kfa-juelich.de/chumni/',
     )
-    segmentation_name = fields.String(required=True)
+    segmentation_name = fields.String(
+        required=True,
+        description='The `name` attribute returned by Chumni as part of its '
+                    'UserDatasetEntry structure (returned by its /list '
+                    'endpoint). This is the name of the segmentation Nifti '
+                    'file, without trailing `.nii` or `.nii.gz`.',
+    )
+
+
+class AuthorizationHeadersSchema(Schema):
+    Authorization = fields.String(
+        required=True,
+        description='Bearer token of the currently logged in user, will be '
+                    'passed as-is to the image service',
+    )
+
+
+class DepthMapComputationResponseSchema(Schema):
+    status_polling_url = fields.Url(
+        required=True,
+        description='A URL for polling the status of the depth map '
+                    'computation. This URL is relative to the base URL of the '
+                    'backend.',
+    )
 
 
 class LandmarkPairSchema(Schema):
@@ -69,32 +96,187 @@ class LandmarkPairSchema(Schema):
     )
 
 
+class DepthMapComputationResultSchema(Schema):
+    class Meta:
+        ordered = True
+    image_service_base_url = fields.Url(
+        schemes={'http', 'https'}, required=True,
+        description='Base URL of the image service where the depth map image '
+                    'was uploaded.',
+        example=EXAMPLE_IMAGE_SERVICE_URL,
+    )
+    depth_map_name = fields.String(
+        required=True,
+        description='The `name` under which the depth map image was uploaded '
+                    'onto the image service.',
+    )
+    depth_map_neuroglancer_url = fields.Url(
+        required=True,
+        description='A URL that can be passed to Neuroglancer to display the '
+                    'depth map. It will include the Neuroglancer datasource '
+                    'prefix (i.e. `precomputed://`).',
+    )
+
+
+class ComputationTaskStatusResponseSchema(Schema):
+    class Meta:
+        ordered = True
+    finished = fields.Boolean(
+        required=True,
+        description='A flag that indicates if the depth map computation has '
+                    'come to an end, i.e. if set to false, the status will '
+                    'not change and no further polling is necessary.',
+    )
+    message = fields.String(
+        required=True,
+        description='A status message that can be displayed to the user. It '
+                    'contains status feedback suitable for display to the '
+                    'user (typically it could be “Downloading segmentation”, '
+                    'then “Computing depth map”, then “Uploading depth map”, '
+                    'finally “Finished”). If error is true, it is a user-'
+                    'readable error message.',
+    )
+    error = fields.Boolean(
+        required=False,
+        description='Flag set to true if there was an error, in that case the '
+                    'depth map is unavailable and message contains an error '
+                    'message',
+    )
+
+
+class DepthMapComputationTaskStatusResponseSchema(
+        ComputationTaskStatusResponseSchema):
+    results = fields.Nested(
+        DepthMapComputationResultSchema,
+        required=False,
+        description='Result of the computation. Present only if `finished` is '
+                    'true and `error` is false.',
+    )
+
+
 class AlignmentComputationRequestSchema(Schema):
     class Meta:
         ordered = True
     image_service_base_url = fields.Url(
-        schemes={'http', 'https'}, required=True
+        schemes={'http', 'https'}, required=True,
+        description='Base URL of the image service.',
+        example='https://zam10143.zam.kfa-juelich.de/chumni/',
     )
-    image_name = fields.String(required=True)
-    depth_map_name = fields.String(required=True)
+    image_name = fields.String(
+        required=True,
+        description='The `name` under which the user-visible cortical patch '
+                    'image is known to the image service.',
+    )
+    depth_map_name = fields.String(
+        required=True,
+        description='The `name` under which the depth map image is known '
+                    'to the image service.',
+    )
     # TODO: use linear_voluba.api.TransformationMatrixField
     transformation_matrix = fields.List(
         fields.List(
             fields.Float,
             validate=Length(equal=4)
-        ), validate=Length(min=3, max=4), required=True)
+        ), validate=Length(min=3, max=4), required=True,
+        description='The 4×4 affine transformation matrix from the incoming '
+                    'volume to the template space, in millimetres, in the '
+                    'same format as returned by the `/least-squares` affine '
+                    'backend.',
+    )
     landmark_pairs = fields.Nested(
         LandmarkPairSchema,
-        many=True, unknown=marshmallow.EXCLUDE, required=True
+        many=True, unknown=marshmallow.EXCLUDE, required=True,
+        description='The list of landmark pairs, in the same format as '
+                    'consumed by the `/least-squares` affine backend. Note '
+                    'that `source_point` refers to the template volume, while '
+                    '`target_point` refers to the incoming volume.',
     )
 
 
+class AlignmentComputationResponseSchema(Schema):
+    status_polling_url = fields.Url(
+        required=True,
+        description='A URL for polling the status of the alignment '
+                    'computation. This URL is relative to the base URL of the '
+                    'backend.',
+    )
+
+
+class AlignmentComputationResultSchema(Schema):
+    class Meta:
+        ordered = True
+    image_service_base_url = fields.Url(
+        schemes={'http', 'https'}, required=True,
+        description='Base URL of the image service where the transformed '
+                    'image was uploaded.',
+        example=EXAMPLE_IMAGE_SERVICE_URL,
+    )
+    transformed_image_name = fields.String(
+        required=True,
+        description='The `name` under which the transformed image was '
+                    'uploaded onto the image service.',
+    )
+    transformed_image_neuroglancer_url = fields.Url(
+        required=True,
+        description='A URL that can be passed to Neuroglancer to display the '
+                    'transformed image. It will include the Neuroglancer '
+                    'datasource prefix (i.e. `precomputed://`).',
+    )
+    # TODO: use linear_voluba.api.TransformationMatrixField
+    transformation_matrix = fields.List(
+        fields.List(
+            fields.Float,
+            validate=Length(equal=4)
+        ), validate=Length(min=3, max=4), required=True,
+        description='The affine transformation matrix that must be applied to '
+                    'display the transformed image in the template space. It '
+                    'is a 4×4 affine transformation matrix, in millimetres, '
+                    'in the same format as returned by the `/least-squares` '
+                    'affine backend.',
+    )
+
+
+class AlignmentComputationTaskStatusResponseSchema(
+        ComputationTaskStatusResponseSchema):
+    results = fields.Nested(
+        AlignmentComputationResultSchema,
+        required=False,
+        description='Result of the computation. Present only if `finished` is '
+                    'true and `error` is false.',
+    )
+
+
+class ErrorResponseSchema(Schema):
+    class Meta:
+        ordered = True
+        unknown = marshmallow.INCLUDE
+        strict = False
+    code = fields.Integer(required=False)
+    status = fields.String(required=False)
+    message = fields.String(required=False)
+    errors = fields.Dict(keys=fields.String(), required=False)
+
+
 @bp.route('/depth-map-computation/', methods=['POST'])
-@bp.arguments(DepthMapComputationRequestSchema)
-# TODO: documernt header arguments (Authorization header)
-# TODO: document responses
-@bp.response(code=202)
+@bp.arguments(DepthMapComputationRequestSchema, location='json')
+@bp.doc(security=[{'chumni_auth': []}])
+# The error responses come first, the schemas are only used for
+# documentation
+@bp.response(ErrorResponseSchema, code=400)
+@bp.response(ErrorResponseSchema, code=401)
+# Code 422 is raised by webargs for request validation errors
+@bp.response(ErrorResponseSchema, code=422,
+             description='Semantically invalid request')
+# The successful response must be the last response decorator, its schema
+# is used for serializing the response.
+@bp.response(DepthMapComputationResponseSchema, code=202)
 def create_depth_map_computation(params):
+    """Compute the depth map from a cortical segmentation.
+
+    Trigger computation of the depth map for an image, given a cortical
+    segmentation of the volume that has been uploaded previously to the image
+    service.
+    """
     image_service_base_url = params['image_service_base_url']
     segmentation_name = params['segmentation_name']
     authorization_header = request.headers.get('Authorization')
@@ -124,19 +306,38 @@ def create_depth_map_computation(params):
     }), 202
 
 
+class DepthMapComputationPollPathSchema(Schema):
+    computation_id = fields.String(
+        required=True,
+        description='Computation id returned by /v0/depth-map-computation/',
+    )
+
+
 @bp.route('/depth-map-computation/<computation_id>', methods=['GET'])
-# TODO: document responses
-def depth_map_computation_status(computation_id):
+@bp.arguments(DepthMapComputationPollPathSchema, location='path')
+@bp.response(DepthMapComputationTaskStatusResponseSchema, code=200)
+def depth_map_computation_status(path_args, *, computation_id):
+    """Poll the status of a depth map computation task."""
+    assert computation_id == path_args['computation_id']
     task_result = tasks.depth_map_computation_task.AsyncResult(computation_id)
     return make_computation_task_status_response(task_result)
 
 
 @bp.route('/alignment-computation/', methods=['POST'])
 @bp.arguments(AlignmentComputationRequestSchema)
-# TODO: documernt header arguments (Authorization header)
-# TODO: document responses
-@bp.response(code=202)
+@bp.doc(security=[{'chumni_auth': []}])
+# The error responses come first, the schemas are only used for
+# documentation
+@bp.response(ErrorResponseSchema, code=400)
+@bp.response(ErrorResponseSchema, code=401)
+# Code 422 is raised by webargs for request validation errors
+@bp.response(ErrorResponseSchema, code=422,
+             description='Semantically invalid request')
+# The successful response must be the last response decorator, its schema
+# is used for serializing the response.
+@bp.response(AlignmentComputationResponseSchema, code=202)
 def create_alignment_computation(params):
+    """Compute the alignment of a cortical patch."""
     image_service_base_url = params['image_service_base_url']
     image_name = params['image_name']
     depth_map_name = params['depth_map_name']
@@ -168,9 +369,19 @@ def create_alignment_computation(params):
     }), 202
 
 
+class AlignmentComputationPollPathSchema(Schema):
+    computation_id = fields.String(
+        required=True,
+        description='Computation id returned by /v0/alignment-computation/',
+    )
+
+
 @bp.route('/alignment-computation/<computation_id>', methods=['GET'])
-# TODO: document responses
-def alignment_computation_status(computation_id):
+@bp.arguments(AlignmentComputationPollPathSchema, location='path')
+@bp.response(AlignmentComputationTaskStatusResponseSchema, code=200)
+def alignment_computation_status(path_args, *, computation_id):
+    """Poll the status of a depth map computation task."""
+    assert computation_id == path_args['computation_id']
     task_result = tasks.alignment_computation_task.AsyncResult(computation_id)
     return make_computation_task_status_response(task_result)
 
