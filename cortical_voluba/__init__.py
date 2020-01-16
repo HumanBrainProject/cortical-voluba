@@ -1,4 +1,4 @@
-# Copyright 2019 CEA
+# Copyright 2019–2020 CEA
 # Author: Yann Leprince <yann.leprince@cea.fr>
 #
 # This file is part of cortical-voluba.
@@ -26,37 +26,17 @@ import os
 import re
 
 import flask
+import flask_smorest
 
-
-# Version used by setup.py and docs/conf.py (parsed with a regular expression).
-#
-# Release checklist (based on https://packaging.python.org/):
-# 1.  Ensure that tests pass for all supported Python version (Travis CI),
-#     ensure that the API documentation is complete (sphinx-apidoc --separate
-#     -o docs/api cortical_voluba);
-# 2.  Update the release notes;
-# 3.  Run check-manifest;
-# 4.  Bump the version number in this file;
-# 5.  pip install -U setuptools wheel twine
-# 6.  python setup.py sdist bdist_wheel
-# 7.  twine upload --repository-url https://test.pypi.org/legacy/ dist/*
-# 8.  Commit the updated version number
-# 9.  Tag the commit (git tag -a vX.Y.Z). The release notes for the last
-#     version should be converted to plain text and included in the tag
-#     message:
-#     pandoc -t plain docs/release-notes.rst
-# 10. Bump the version number in this file to something that ends with .dev0
-#     and commit
-# 11. Push the master branch and the new tag to Github
-# 12. twine upload dist/*
+# __version__ and SOURCE_URL are used by setup.py and docs/conf.py (they are
+# parsed with a regular expression, so keep the syntax simple).
 __version__ = "0.1.0.dev0"
 
 
 SOURCE_URL = 'https://github.com/HumanBrainProject/cortical-voluba'
 """URL that holds the source code of the backend.
 
-This must be changed to point to the exact code of any modified version, in
-order to comply with the GNU Affero GPL licence.
+This should be changed to point to the code of any modified version.
 """
 
 
@@ -74,9 +54,14 @@ class DefaultConfig:
     # arguments, see
     # https://werkzeug.palletsprojects.com/en/0.15.x/middleware/proxy_fix/
     PROXY_FIX = None
-    # Redirection URL for requests to the root URL of this backend (intended to
-    # point to the frontend).
-    ROOT_REDIRECT = None
+    # Version of the linear_voluba api (used in the OpenAPI spec)
+    API_VERSION = __version__
+    OPENAPI_VERSION = '3.0.2'  # OpenAPI version to generate
+    OPENAPI_URL_PREFIX = '/'
+    OPENAPI_REDOC_PATH = 'redoc'
+    OPENAPI_REDOC_VERSION = '2.0.0-rc.20'
+    OPENAPI_SWAGGER_UI_PATH = 'swagger-ui'
+    OPENAPI_SWAGGER_UI_VERSION = '3.24.2'
     #
     # Other configuration keys without a default value:
     # TEMPLATE_EQUIVOLUMETRIC_DEPTH : the full path to the pre-computed
@@ -90,24 +75,25 @@ def create_app(test_config=None):
     """Instantiate the cortical-voluba Flask application."""
     # logging configuration inspired by
     # http://flask.pocoo.org/docs/1.0/logging/#basic-configuration
-    logging.config.dictConfig({
-        'version': 1,
-        'disable_existing_loggers': False,  # preserve Gunicorn loggers
-        'formatters': {'default': {
-            'format': '[%(asctime)s] [%(process)d] %(levelname)s '
-                      'in %(module)s: %(message)s',
-            'datefmt': '%Y-%m-%d %H:%M:%S %z',
-        }},
-        'handlers': {'wsgi': {
-            'class': 'logging.StreamHandler',
-            'stream': 'ext://flask.logging.wsgi_errors_stream',
-            'formatter': 'default'
-        }},
-        'root': {
-            'level': 'INFO',
-            'handlers': ['wsgi']
-        }
-    })
+    if test_config is None or not test_config.get('TESTING'):
+        logging.config.dictConfig({
+            'version': 1,
+            'disable_existing_loggers': False,  # preserve Gunicorn loggers
+            'formatters': {'default': {
+                'format': '[%(asctime)s] [%(process)d] %(levelname)s '
+                'in %(module)s: %(message)s',
+                'datefmt': '%Y-%m-%d %H:%M:%S %z',
+            }},
+            'handlers': {'wsgi': {
+                'class': 'logging.StreamHandler',
+                'stream': 'ext://flask.logging.wsgi_errors_stream',
+                'formatter': 'default'
+            }},
+            'root': {
+                'level': 'DEBUG',
+                'handlers': ['wsgi']
+            }
+        })
 
     # If we are running under Gunicorn, set up the root logger to use the same
     # handler as the Gunicorn error stream.
@@ -146,10 +132,9 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    if app.config.get('ROOT_REDIRECT'):
-        @app.route('/')
-        def root():
-            return flask.redirect(app.config.get('ROOT_REDIRECT'))
+    @app.route('/')
+    def root():
+        return flask.redirect('/redoc')
 
     @app.route('/source')
     def source():
@@ -188,8 +173,38 @@ def create_app(test_config=None):
         from . import tasks
         importlib.reload(tasks)
 
+    if app.config['ENV'] == 'development':
+        local_server = [
+            {
+                'url': '/',
+            },
+        ]
+    else:
+        local_server = []
+
+    smorest_api = flask_smorest.Api(app, spec_kwargs={
+        'servers': local_server + [
+            {
+                'url': 'https://cortical-voluba.apps-dev.hbp.eu/',
+                'description': 'Development instance running the *dev* '
+                               'branch',
+            },
+        ],
+        'info': {
+            'title': 'cortical-voluba',
+            'description': '''\
+Voluba backend for non-linear depth-informed alignment of cortical patches.
+
+For more information, see the **source code repository:** <{SOURCE_URL}>.
+'''.format(SOURCE_URL=SOURCE_URL),
+            # 'license': {
+            #     'name': 'Apache 2.0',
+            #     'url': 'https://www.apache.org/licenses/LICENSE-2.0.html',
+            # },
+        },
+    })
     from . import api_v0
-    app.register_blueprint(api_v0.bp)
+    smorest_api.register_blueprint(api_v0.bp)
 
     if app.config.get('PROXY_FIX'):
         from werkzeug.middleware.proxy_fix import ProxyFix

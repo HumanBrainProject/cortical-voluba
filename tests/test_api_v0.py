@@ -56,11 +56,11 @@ def test_create_depth_map_computation_request_errors(
 
     # Malformed request errors
     response = flask_client.post('/v0/depth-map-computation/')
-    assert response.status_code == 400
+    assert response.status_code == 422
     assert 'errors' in response.json
     response = flask_client.post('/v0/depth-map-computation/',
                                  json={})
-    assert response.status_code == 400
+    assert response.status_code == 422
     assert 'errors' in response.json
 
     # Unauthenticated request error
@@ -180,11 +180,11 @@ def test_create_alignment_computation_request_errors(
 
     # Malformed request errors
     response = flask_client.post('/v0/alignment-computation/')
-    assert response.status_code == 400
+    assert response.status_code == 422
     assert 'errors' in response.json
     response = flask_client.post('/v0/alignment-computation/',
                                  json={})
-    assert response.status_code == 400
+    assert response.status_code == 422
     assert 'errors' in response.json
 
     # Unauthenticated request error

@@ -16,24 +16,31 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with cortical-voluba. If not, see <https://www.gnu.org/licenses/>.
 
-import flask
-from flask import abort, current_app, jsonify, make_response, request, url_for
+import logging
+
+from flask import jsonify, make_response, request, url_for
+import flask_smorest
+from flask_smorest import abort
 import marshmallow
 from marshmallow import Schema, fields
 from marshmallow.validate import Length
 import requests
-from werkzeug.local import LocalProxy
 
 from cortical_voluba import image_service
 from cortical_voluba import tasks
 
 
-logger = LocalProxy(lambda: current_app.logger)
+logger = logging.getLogger(__name__)
 
-bp = flask.Blueprint('api_v0', __name__, url_prefix='/v0')
+bp = flask_smorest.Blueprint(
+    'api_v0', __name__, url_prefix='/v0',
+    description='Draft API of the cortical-voluba backend',
+)
 
 
 class DepthMapComputationRequestSchema(Schema):
+    class Meta:
+        ordered = True
     image_service_base_url = fields.Url(
         schemes={'http', 'https'}, required=True
     )
@@ -41,20 +48,36 @@ class DepthMapComputationRequestSchema(Schema):
 
 
 class LandmarkPairSchema(Schema):
-    source_point = fields.List(fields.Float, validate=Length(equal=3),
-                               required=True)
-    target_point = fields.List(fields.Float, validate=Length(equal=3),
-                               required=True)
-    active = fields.Boolean(default=True)
-    name = fields.String()
+    class Meta:
+        ordered = True
+    source_point = fields.List(
+        fields.Float, validate=Length(equal=3), required=True,
+        description='Coordinates of the point in source space.',
+    )
+    target_point = fields.List(
+        fields.Float, validate=Length(equal=3), required=True,
+        description='Coordinates of the point in target space.',
+    )
+    active = fields.Boolean(
+        default=True, missing=True,
+        description='Landmark pairs for which active is false are not used '
+                    'for the estimation of the transformation matrix.',
+    )
+    name = fields.String(
+        required=False,
+        description='Optional identifier of the landmark pair.',
+    )
 
 
 class AlignmentComputationRequestSchema(Schema):
+    class Meta:
+        ordered = True
     image_service_base_url = fields.Url(
         schemes={'http', 'https'}, required=True
     )
     image_name = fields.String(required=True)
     depth_map_name = fields.String(required=True)
+    # TODO: use linear_voluba.api.TransformationMatrixField
     transformation_matrix = fields.List(
         fields.List(
             fields.Float,
@@ -67,10 +90,11 @@ class AlignmentComputationRequestSchema(Schema):
 
 
 @bp.route('/depth-map-computation/', methods=['POST'])
-def create_depth_map_computation():
-    schema = DepthMapComputationRequestSchema()
-    params = schema.load(request.json)
-
+@bp.arguments(DepthMapComputationRequestSchema)
+# TODO: documernt header arguments (Authorization header)
+# TODO: document responses
+@bp.response(code=202)
+def create_depth_map_computation(params):
     image_service_base_url = params['image_service_base_url']
     segmentation_name = params['segmentation_name']
     authorization_header = request.headers.get('Authorization')
@@ -101,16 +125,18 @@ def create_depth_map_computation():
 
 
 @bp.route('/depth-map-computation/<computation_id>', methods=['GET'])
+# TODO: document responses
 def depth_map_computation_status(computation_id):
     task_result = tasks.depth_map_computation_task.AsyncResult(computation_id)
     return make_computation_task_status_response(task_result)
 
 
 @bp.route('/alignment-computation/', methods=['POST'])
-def create_alignment_computation():
-    schema = AlignmentComputationRequestSchema()
-    params = schema.load(request.json)
-
+@bp.arguments(AlignmentComputationRequestSchema)
+# TODO: documernt header arguments (Authorization header)
+# TODO: document responses
+@bp.response(code=202)
+def create_alignment_computation(params):
     image_service_base_url = params['image_service_base_url']
     image_name = params['image_name']
     depth_map_name = params['depth_map_name']
@@ -143,14 +169,10 @@ def create_alignment_computation():
 
 
 @bp.route('/alignment-computation/<computation_id>', methods=['GET'])
+# TODO: document responses
 def alignment_computation_status(computation_id):
     task_result = tasks.alignment_computation_task.AsyncResult(computation_id)
     return make_computation_task_status_response(task_result)
-
-
-@bp.errorhandler(marshmallow.exceptions.ValidationError)
-def handle_validation_error(exc):
-    return jsonify({'errors': exc.messages}), 400
 
 
 def verify_image_on_image_service(client, image_name, expected_type='image'):
