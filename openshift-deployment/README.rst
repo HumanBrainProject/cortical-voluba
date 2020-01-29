@@ -1,7 +1,19 @@
+Deploying on an OpenShift cluster
+=================================
+
+#. Create the project named `cortical-voluba` on https://okd.hbp.eu/
+#. Log in to https://okd.hbp.eu/ using the command-line ``oc`` tool, switch to the `cortical-voluba` project with ``oc project cortical-voluba``
+#. Import the objects from your edited YAML file using ``oc create -f openshift-dev-export.yaml``
+#. Re-create the Persistent Volume Claims and upload the data (see below).
+#. Create the needed Config Maps and Secrets.
+#. Start the build. The deployment should follow automatically.
+#. Go to `Builds` -> `Builds` -> `cortical-voluba` -> `Configuration`, copy the GitHub Webhook URL and configure it into the GitHub repository (https://github.com/HumanBrainProject/cortical-voluba/settings/hooks). Make sure to set the Content Type to ``application/json``.
+
+
 Deployment on openshift-dev.hbp.eu
 ==================================
 
-The deployment configuration is saved to `openshift-dev-export.yaml` by running ``oc get -o yaml --export is,bc,dc,svc,route,pvc,cm,horizontalpodautoscaler`` (`status` information is stripped manually). See https://collab.humanbrainproject.eu/#/collab/38996/nav/270508 and [hbp-spatial-backend](https://github.com/HumanBrainProject/hbp-spatial-backend/tree/master/openshift-deployment#deploying-to-production) for instructions for restoring a working deployment using this snapshot.
+The deployment configuration is saved to `openshift-dev-export.yaml` by running ``oc get -o yaml --export is,bc,dc,svc,route,pvc,cm,horizontalpodautoscaler`` (`status` information is stripped manually). See https://collab.humanbrainproject.eu/#/collab/38996/nav/270508 and https://github.com/HumanBrainProject/hbp-spatial-backend/tree/master/openshift-deployment#deploying-to-production for instructions for restoring a working deployment using this snapshot.
 
 For the record, here are the steps that were used to create this OpenShift project on https://openshift-dev.hbp.eu/:
 
@@ -45,7 +57,7 @@ For the record, here are the steps that were used to create this OpenShift proje
            # (https://github.com/pypa/pip/issues/4222#issuecomment-417672236)
            PIP_IGNORE_INSTALLED=0 python3 -m pip install --user /source[tests]
            cd /source
-           python3 -m pytest
+           python3 -m pytest tests/
 
       #. Hit `Save`
 
@@ -124,7 +136,7 @@ For the record, here are the steps that were used to create this OpenShift proje
            # (https://github.com/pypa/pip/issues/4222#issuecomment-417672236)
            PIP_IGNORE_INSTALLED=0 python3 -m pip install --user /source[tests]
            cd /source
-           python3 -m pytest
+           python3 -m pytest tests/
 
       #. Hit `Save`
 
@@ -150,7 +162,7 @@ For the record, here are the steps that were used to create this OpenShift proje
       #. Set `Name` = `static-data`, `Size` = `1 GiB`
       #. Hit `Create`
       #. Set `Mount Path` = `/static-data`
-      #. For the moment *do not* set `Read only` (we will need to connect to a Celery container for writing the data into the Volume).
+      #. Set the mount to `Read only`
       #. Hit `Add`
 
    #. Upload the static data (equivolumetric depth for BigBrain). We follow the method described on https://blog.openshift.com/transferring-files-in-and-out-of-containers-in-openshift-part-3/
@@ -158,14 +170,13 @@ For the record, here are the steps that were used to create this OpenShift proje
       #. Install the OpenShift Command-Line Tools by following the instructions on https://openshift-dev.hbp.eu/console/command-line
       #. Log in using the CLI (Under your name on the top right corner, hit `Copy Login Command` and paste it into a terminal)
       #. Switch to the project (``oc project cortical-voluba``)
-      #. Use `oc get pods` to get the name of the running Celery pod
-      #. Copy the data using ``oc rsync static-data/ cortical-voluba-celery-5-z4l2n:/static-data/`` (replace `cortical-voluba-celery-5-z4l2n` with the pod name from the previous step).
-      #. Verify the contents of the directory with ``oc rsh cortical-voluba-celery-5-z4l2n ls -l /static-data``
-      #. The `static-data` volume mount can now be switched to read-only: go to `Applications` -> `Deployments` -> `cortical-voluba-celery` -> `Actions` -> `Edit YAML`, then add a key `readOnly: true` to the element of the `volumeMounts` dictionary::
-
-           - mountPath: /static-data
-             name: static-data
-             readOnly: true
+      #. Run a dummy pod for rsync transfer with ``oc run dummy --image ylep/oc-rsync-transfer``
+      #. Mount the volume against the dummy pod ``oc set volume dc/dummy --add --name=tmp-mount --claim-name=static-data --mount-path /static-data``
+      #. Wait for the deployment to be complete with ``oc rollout status dc/dummy``
+      #. Get the name of the dummy pod with ``oc get pods --selector run=dummy``
+      #. Copy the data using ``oc rsync --compress=true --progress=true static-data/ dummy-2-7tdml:/static-data/`` (replace `dummy-2-7tdml` with the pod name from the previous step).
+      #. Verify the contents of the directory with ``oc rsh dummy-2-7tdml ls -l /static-data``
+      #. Delete everything related to the temporary pod with ``oc delete all --selector run=dummy``
 
    #. Add Health Checks (TODO: figure out how to check for celery worker, I could not figure out how to use ``celery inspect ping``).
 

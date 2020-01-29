@@ -5,15 +5,15 @@ items:
   metadata:
     annotations:
       openshift.io/generated-by: OpenShiftWebConsole
-    creationTimestamp: 2019-09-11T08:43:17Z
+    creationTimestamp: 2020-01-29T14:11:24Z
     generation: 1
     labels:
       app: cortical-voluba-celery
     name: cortical-voluba-celery
     namespace: cortical-voluba
-    resourceVersion: "47633593"
+    resourceVersion: "11616500"
     selfLink: /apis/image.openshift.io/v1/namespaces/cortical-voluba/imagestreams/cortical-voluba-celery
-    uid: 337e1efe-d470-11e9-acd7-fa163e8fd6a1
+    uid: 3bb4af1e-42a1-11ea-bfa5-fa163e0fc7ce
   spec:
     lookupPolicy:
       local: false
@@ -22,15 +22,15 @@ items:
   metadata:
     annotations:
       openshift.io/generated-by: OpenShiftWebConsole
-    creationTimestamp: 2019-09-11T08:26:22Z
+    creationTimestamp: 2020-01-29T14:11:24Z
     generation: 1
     labels:
       app: cortical-voluba-flask
     name: cortical-voluba-flask
     namespace: cortical-voluba
-    resourceVersion: "45066812"
+    resourceVersion: "11614062"
     selfLink: /apis/image.openshift.io/v1/namespaces/cortical-voluba/imagestreams/cortical-voluba-flask
-    uid: d6aa8861-d46d-11e9-acd7-fa163e8fd6a1
+    uid: 3bbbff32-42a1-11ea-bfa5-fa163e0fc7ce
   spec:
     lookupPolicy:
       local: false
@@ -39,15 +39,16 @@ items:
   metadata:
     annotations:
       openshift.io/generated-by: OpenShiftWebConsole
-    creationTimestamp: 2019-09-11T08:43:17Z
+    creationTimestamp: 2020-01-29T14:11:24Z
     labels:
       app: cortical-voluba-celery
     name: cortical-voluba-celery
     namespace: cortical-voluba
-    resourceVersion: "47633182"
+    resourceVersion: "11616193"
     selfLink: /apis/build.openshift.io/v1/namespaces/cortical-voluba/buildconfigs/cortical-voluba-celery
-    uid: 337faf7a-d470-11e9-acd7-fa163e8fd6a1
+    uid: 3bc3d7fc-42a1-11ea-bfa5-fa163e0fc7ce
   spec:
+    failedBuildsHistoryLimit: 5
     nodeSelector: null
     output:
       to:
@@ -61,7 +62,7 @@ items:
         # (https://github.com/pypa/pip/issues/4222#issuecomment-417672236)
         PIP_IGNORE_INSTALLED=0 python3 -m pip install --user /source[tests]
         cd /source
-        python3 -m pytest
+        python3 -m pytest tests/
     resources: {}
     runPolicy: Serial
     source:
@@ -74,6 +75,7 @@ items:
         dockerfilePath: Dockerfile.celery
         forcePull: true
       type: Docker
+    successfulBuildsHistoryLimit: 5
     triggers:
     - generic:
         secret: 2ca81342e8cef25e
@@ -86,15 +88,16 @@ items:
   metadata:
     annotations:
       openshift.io/generated-by: OpenShiftWebConsole
-    creationTimestamp: 2019-09-11T08:26:23Z
+    creationTimestamp: 2020-01-29T14:11:24Z
     labels:
       app: cortical-voluba-flask
     name: cortical-voluba-flask
     namespace: cortical-voluba
-    resourceVersion: "45066341"
+    resourceVersion: "11615846"
     selfLink: /apis/build.openshift.io/v1/namespaces/cortical-voluba/buildconfigs/cortical-voluba-flask
-    uid: d6bc3dac-d46d-11e9-acd7-fa163e8fd6a1
+    uid: 3bcbaffb-42a1-11ea-bfa5-fa163e0fc7ce
   spec:
+    failedBuildsHistoryLimit: 5
     nodeSelector: null
     output:
       to:
@@ -108,7 +111,7 @@ items:
         # (https://github.com/pypa/pip/issues/4222#issuecomment-417672236)
         PIP_IGNORE_INSTALLED=0 python3 -m pip install --user /source[tests]
         cd /source
-        python3 -m pytest
+        python3 -m pytest tests/
     resources: {}
     runPolicy: Serial
     source:
@@ -121,6 +124,7 @@ items:
         dockerfilePath: Dockerfile.flask
         forcePull: true
       type: Docker
+    successfulBuildsHistoryLimit: 5
     triggers:
     - type: ConfigChange
     - generic:
@@ -134,17 +138,18 @@ items:
   metadata:
     annotations:
       openshift.io/generated-by: OpenShiftWebConsole
-    creationTimestamp: 2019-09-11T08:43:17Z
-    generation: 36
+    creationTimestamp: 2020-01-29T14:11:24Z
+    generation: 3
     labels:
       app: cortical-voluba-celery
     name: cortical-voluba-celery
     namespace: cortical-voluba
-    resourceVersion: "47634517"
+    resourceVersion: "11617174"
     selfLink: /apis/apps.openshift.io/v1/namespaces/cortical-voluba/deploymentconfigs/cortical-voluba-celery
-    uid: 337e9427-d470-11e9-acd7-fa163e8fd6a1
+    uid: 3bd3b7ae-42a1-11ea-bfa5-fa163e0fc7ce
   spec:
     replicas: 1
+    revisionHistoryLimit: 10
     selector:
       deploymentconfig: cortical-voluba-celery
     strategy:
@@ -173,15 +178,13 @@ items:
               secretKeyRef:
                 key: database-password
                 name: redis
-          image: docker-registry.default.svc:5000/cortical-voluba/cortical-voluba-celery@sha256:f3a42b2a4596878ae4893589e8ef1e6f4b895c81f11ce3d394d6df30377a1ee9
+          image: docker-registry.default.svc:5000/cortical-voluba/cortical-voluba-celery@sha256:c1aa4a325d06e1fbeef9fcd10b51e60326d4fdd121ee382faa9b9acb2a62d844
           imagePullPolicy: Always
           name: cortical-voluba-celery
           ports:
           - containerPort: 8080
             protocol: TCP
-          resources:
-            requests:
-              cpu: "1"
+          resources: {}
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           volumeMounts:
@@ -213,7 +216,7 @@ items:
           kind: ImageStreamTag
           name: cortical-voluba-celery:latest
           namespace: cortical-voluba
-        lastTriggeredImage: docker-registry.default.svc:5000/cortical-voluba/cortical-voluba-celery@sha256:f3a42b2a4596878ae4893589e8ef1e6f4b895c81f11ce3d394d6df30377a1ee9
+        lastTriggeredImage: docker-registry.default.svc:5000/cortical-voluba/cortical-voluba-celery@sha256:c1aa4a325d06e1fbeef9fcd10b51e60326d4fdd121ee382faa9b9acb2a62d844
       type: ImageChange
     - type: ConfigChange
 - apiVersion: apps.openshift.io/v1
@@ -221,17 +224,18 @@ items:
   metadata:
     annotations:
       openshift.io/generated-by: OpenShiftWebConsole
-    creationTimestamp: 2019-09-11T08:26:23Z
-    generation: 38
+    creationTimestamp: 2020-01-29T14:11:24Z
+    generation: 2
     labels:
       app: cortical-voluba-flask
     name: cortical-voluba-flask
     namespace: cortical-voluba
-    resourceVersion: "45066937"
+    resourceVersion: "11614898"
     selfLink: /apis/apps.openshift.io/v1/namespaces/cortical-voluba/deploymentconfigs/cortical-voluba-flask
-    uid: d6b32dc8-d46d-11e9-acd7-fa163e8fd6a1
+    uid: 3bdb1451-42a1-11ea-bfa5-fa163e0fc7ce
   spec:
     replicas: 1
+    revisionHistoryLimit: 10
     selector:
       deploymentconfig: cortical-voluba-flask
     strategy:
@@ -260,7 +264,7 @@ items:
               secretKeyRef:
                 key: database-password
                 name: redis
-          image: docker-registry.default.svc:5000/cortical-voluba/cortical-voluba-flask@sha256:daa227625f6b74f48686ff5d7354120f8912279c3b8fe832f338d58947636470
+          image: docker-registry.default.svc:5000/cortical-voluba/cortical-voluba-flask@sha256:8370e9a141f3b757a9948132a469dda23e4d82a319983e67fd6ec264591e8105
           imagePullPolicy: Always
           livenessProbe:
             failureThreshold: 3
@@ -311,7 +315,7 @@ items:
           kind: ImageStreamTag
           name: cortical-voluba-flask:latest
           namespace: cortical-voluba
-        lastTriggeredImage: docker-registry.default.svc:5000/cortical-voluba/cortical-voluba-flask@sha256:daa227625f6b74f48686ff5d7354120f8912279c3b8fe832f338d58947636470
+        lastTriggeredImage: docker-registry.default.svc:5000/cortical-voluba/cortical-voluba-flask@sha256:8370e9a141f3b757a9948132a469dda23e4d82a319983e67fd6ec264591e8105
       type: ImageChange
     - type: ConfigChange
 - apiVersion: apps.openshift.io/v1
@@ -319,16 +323,16 @@ items:
   metadata:
     annotations:
       template.alpha.openshift.io/wait-for-ready: "true"
-    creationTimestamp: 2019-09-11T08:59:05Z
+    creationTimestamp: 2020-01-29T14:11:25Z
     generation: 2
     labels:
       template: redis-ephemeral-template
       template.openshift.io/template-instance-owner: 6854f2e8-d472-11e9-94ad-fa163e2c730e
     name: redis
     namespace: cortical-voluba
-    resourceVersion: "42519385"
+    resourceVersion: "11614904"
     selfLink: /apis/apps.openshift.io/v1/namespaces/cortical-voluba/deploymentconfigs/redis
-    uid: 686931c7-d472-11e9-9fef-fa163e42fca5
+    uid: 3be260e7-42a1-11ea-bfa5-fa163e0fc7ce
   spec:
     replicas: 1
     revisionHistoryLimit: 10
@@ -353,7 +357,7 @@ items:
               secretKeyRef:
                 key: database-password
                 name: redis
-          image: docker-registry.default.svc:5000/openshift/redis@sha256:ea13fc7d5bd4531f89734a004c7ae2d34dc6a88809df4c8ec12885b7cbf51710
+          image: docker-registry.default.svc:5000/openshift/redis@sha256:06dbb609484330ec6be6090109f1fa16e936afcf975d1cbc5fff3e6c7cae7542
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -408,7 +412,7 @@ items:
           kind: ImageStreamTag
           name: redis:3.2
           namespace: openshift
-        lastTriggeredImage: docker-registry.default.svc:5000/openshift/redis@sha256:ea13fc7d5bd4531f89734a004c7ae2d34dc6a88809df4c8ec12885b7cbf51710
+        lastTriggeredImage: docker-registry.default.svc:5000/openshift/redis@sha256:06dbb609484330ec6be6090109f1fa16e936afcf975d1cbc5fff3e6c7cae7542
       type: ImageChange
     - type: ConfigChange
 - apiVersion: v1
@@ -416,14 +420,14 @@ items:
   metadata:
     annotations:
       openshift.io/generated-by: OpenShiftWebConsole
-    creationTimestamp: 2019-09-11T08:43:17Z
+    creationTimestamp: 2020-01-29T14:11:25Z
     labels:
       app: cortical-voluba-celery
     name: cortical-voluba-celery
     namespace: cortical-voluba
-    resourceVersion: "17455035"
+    resourceVersion: "11613280"
     selfLink: /api/v1/namespaces/cortical-voluba/services/cortical-voluba-celery
-    uid: 338269d6-d470-11e9-acd7-fa163e8fd6a1
+    uid: 3bea817d-42a1-11ea-bfa5-fa163e0fc7ce
   spec:
     clusterIP: 172.30.188.203
     ports:
@@ -440,14 +444,14 @@ items:
   metadata:
     annotations:
       openshift.io/generated-by: OpenShiftWebConsole
-    creationTimestamp: 2019-09-11T08:26:23Z
+    creationTimestamp: 2020-01-29T14:11:25Z
     labels:
       app: cortical-voluba-flask
     name: cortical-voluba-flask
     namespace: cortical-voluba
-    resourceVersion: "17451319"
+    resourceVersion: "11613283"
     selfLink: /api/v1/namespaces/cortical-voluba/services/cortical-voluba-flask
-    uid: d6b45b90-d46d-11e9-acd7-fa163e8fd6a1
+    uid: 3bf3630b-42a1-11ea-bfa5-fa163e0fc7ce
   spec:
     clusterIP: 172.30.53.10
     ports:
@@ -462,14 +466,14 @@ items:
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: 2019-09-11T09:25:03Z
+    creationTimestamp: 2020-01-29T14:11:25Z
     labels:
       gluster.kubernetes.io/provisioned-for-pvc: static-data
     name: glusterfs-dynamic-01aa9cbd-d476-11e9-acd7-fa163e8fd6a1
     namespace: cortical-voluba
-    resourceVersion: "17464155"
+    resourceVersion: "11613286"
     selfLink: /api/v1/namespaces/cortical-voluba/services/glusterfs-dynamic-01aa9cbd-d476-11e9-acd7-fa163e8fd6a1
-    uid: 09519376-d476-11e9-9fef-fa163e42fca5
+    uid: 3bfeb797-42a1-11ea-bfa5-fa163e0fc7ce
   spec:
     clusterIP: 172.30.204.157
     ports:
@@ -483,15 +487,15 @@ items:
   metadata:
     annotations:
       template.openshift.io/expose-uri: redis://{.spec.clusterIP}:{.spec.ports[?(.name=="redis")].port}
-    creationTimestamp: 2019-09-11T08:59:05Z
+    creationTimestamp: 2020-01-29T14:11:25Z
     labels:
       template: redis-ephemeral-template
       template.openshift.io/template-instance-owner: 6854f2e8-d472-11e9-94ad-fa163e2c730e
     name: redis
     namespace: cortical-voluba
-    resourceVersion: "17458518"
+    resourceVersion: "11613289"
     selfLink: /api/v1/namespaces/cortical-voluba/services/redis
-    uid: 6865b811-d472-11e9-9fef-fa163e42fca5
+    uid: 3c0db02b-42a1-11ea-bfa5-fa163e0fc7ce
   spec:
     clusterIP: 172.30.26.169
     ports:
@@ -506,14 +510,14 @@ items:
 - apiVersion: route.openshift.io/v1
   kind: Route
   metadata:
-    creationTimestamp: 2019-09-11T08:51:34Z
+    creationTimestamp: 2020-01-29T14:11:25Z
     labels:
       app: cortical-voluba-flask
     name: cortical-voluba-https
     namespace: cortical-voluba
-    resourceVersion: "19565468"
+    resourceVersion: "11613292"
     selfLink: /apis/route.openshift.io/v1/namespaces/cortical-voluba/routes/cortical-voluba-https
-    uid: 5b8af1d0-d471-11e9-acd7-fa163e8fd6a1
+    uid: 3c164cb5-42a1-11ea-bfa5-fa163e0fc7ce
   spec:
     host: cortical-voluba.apps-dev.hbp.eu
     port:
@@ -532,23 +536,23 @@ items:
     annotations:
       pv.kubernetes.io/bind-completed: "yes"
       pv.kubernetes.io/bound-by-controller: "yes"
-      volume.beta.kubernetes.io/storage-provisioner: kubernetes.io/glusterfs
-    creationTimestamp: 2019-09-11T09:24:51Z
+      volume.beta.kubernetes.io/storage-class: managed-nfs-storage
+      volume.beta.kubernetes.io/storage-provisioner: fuseim.pri/ifs
+    creationTimestamp: 2020-01-29T14:20:48Z
     finalizers:
     - kubernetes.io/pvc-protection
     name: static-data
     namespace: cortical-voluba
-    resourceVersion: "17464161"
+    resourceVersion: "11615474"
     selfLink: /api/v1/namespaces/cortical-voluba/persistentvolumeclaims/static-data
-    uid: 01aa9cbd-d476-11e9-acd7-fa163e8fd6a1
+    uid: 8bb44566-42a2-11ea-bfa5-fa163e0fc7ce
   spec:
     accessModes:
     - ReadWriteOnce
     resources:
       requests:
         storage: 1Gi
-    storageClassName: glusterfs-storage
-    volumeName: pvc-01aa9cbd-d476-11e9-acd7-fa163e8fd6a1
+    volumeName: pvc-8bb44566-42a2-11ea-bfa5-fa163e0fc7ce
 - apiVersion: v1
   data:
     config.py: |
@@ -566,29 +570,28 @@ items:
       ROOT_REDIRECT = 'https://voluba-dev.apps-dev.hbp.eu/'
   kind: ConfigMap
   metadata:
-    creationTimestamp: 2019-09-11T09:15:35Z
+    creationTimestamp: 2020-01-29T14:11:25Z
     name: instance-dir
     namespace: cortical-voluba
-    resourceVersion: "19254698"
+    resourceVersion: "11613296"
     selfLink: /api/v1/namespaces/cortical-voluba/configmaps/instance-dir
-    uid: b6c01a97-d474-11e9-acd7-fa163e8fd6a1
+    uid: 3c29fbb5-42a1-11ea-bfa5-fa163e0fc7ce
 - apiVersion: autoscaling/v1
   kind: HorizontalPodAutoscaler
   metadata:
     annotations:
-      autoscaling.alpha.kubernetes.io/conditions: '[{"type":"AbleToScale","status":"True","lastTransitionTime":"2019-12-18T12:29:38Z","reason":"SucceededGetScale","message":"the
-        HPA controller was able to get the target''s current scale"},{"type":"ScalingActive","status":"False","lastTransitionTime":"2019-12-18T12:29:38Z","reason":"FailedGetResourceMetric","message":"the
-        HPA was unable to compute the replica count: unable to get metrics for resource
-        cpu: unable to fetch metrics from resource metrics API: the server could not
-        find the requested resource (get pods.metrics.k8s.io)"}]'
-    creationTimestamp: 2019-12-18T12:29:08Z
+      autoscaling.alpha.kubernetes.io/conditions: '[{"type":"AbleToScale","status":"True","lastTransitionTime":"2020-01-29T14:11:55Z","reason":"SucceededGetScale","message":"the
+        HPA controller was able to get the target''s current scale"},{"type":"ScalingActive","status":"False","lastTransitionTime":"2020-01-29T14:25:56Z","reason":"FailedGetResourceMetric","message":"the
+        HPA was unable to compute the replica count: missing request for cpu on container
+        cortical-voluba-celery in pod cortical-voluba/cortical-voluba-celery-2-vzh74"}]'
+    creationTimestamp: 2020-01-29T14:11:25Z
     labels:
       app: cortical-voluba-celery
     name: cortical-voluba-celery
     namespace: cortical-voluba
-    resourceVersion: "47634919"
+    resourceVersion: "11617429"
     selfLink: /apis/autoscaling/v1/namespaces/cortical-voluba/horizontalpodautoscalers/cortical-voluba-celery
-    uid: fd0218b6-2191-11ea-af76-fa163e8fd6a1
+    uid: 3c328384-42a1-11ea-bfa5-fa163e0fc7ce
   spec:
     maxReplicas: 5
     minReplicas: 1
