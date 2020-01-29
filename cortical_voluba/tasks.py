@@ -220,10 +220,13 @@ def alignment_computation_task(self, params, *, bearer_token):
         self.update_state(state='PROGRESS', meta={
             'message': 'computing alignment',
         })
-        alignment.estimate_deformation(depth_map_path,
-                                       params['transformation_matrix'],
-                                       params['landmark_pairs'],
-                                       work_dir=work_dir)
+        alignment.estimate_deformation(
+            depth_map_path,
+            current_app.config['TEMPLATE_EQUIVOLUMETRIC_DEPTH'],
+            params['transformation_matrix'],
+            params['landmark_pairs'],
+            work_dir=work_dir,
+        )
 
         self.update_state(state='PROGRESS', meta={
             'message': 'resampling the image',

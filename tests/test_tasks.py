@@ -94,8 +94,10 @@ TEST_ALIGNMENT_REQUEST = {
 def test_alignment_task(transform_image_mock,
                         estimate_deformation_mock,
                         image_service_client_mock,
-                        monkeypatch):
+                        monkeypatch,
+                        flask_app):
     monkeypatch.setattr(image_service, 'ImageServiceClient', ImageServiceStub)
+    flask_app.config['TEMPLATE_EQUIVOLUMETRIC_DEPTH'] = '/some/file'
 
     from cortical_voluba.tasks import alignment_computation_task
     ret = alignment_computation_task(TEST_ALIGNMENT_REQUEST,
@@ -103,6 +105,7 @@ def test_alignment_task(transform_image_mock,
 
     estimate_deformation_mock.assert_called_once_with(
         ANY,
+        '/some/file',
         TEST_ALIGNMENT_REQUEST['transformation_matrix'],
         TEST_ALIGNMENT_REQUEST['landmark_pairs'],
         work_dir=ANY,

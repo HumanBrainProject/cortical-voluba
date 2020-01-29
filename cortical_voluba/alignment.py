@@ -62,11 +62,9 @@ def write_itk_affine_transform(mat, file_name):
         f.write("FixedParameters: 0 0 0\n")
 
 
-def estimate_deformation(depth_map_path, transformation_matrix, landmark_pairs,
+def estimate_deformation(depth_map_path, template_depth_map_path,
+                         transformation_matrix, landmark_pairs,
                          work_dir):
-    template_depth_map_path = (
-        current_app.config['TEMPLATE_EQUIVOLUMETRIC_DEPTH']
-    )
     incoming_to_template_affine = numpy.asarray(transformation_matrix)
     assert incoming_to_template_affine.shape == (4, 4)
     if numpy.any(incoming_to_template_affine[3] != [0, 0, 0, 1]):
