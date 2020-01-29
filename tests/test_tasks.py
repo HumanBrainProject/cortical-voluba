@@ -1,4 +1,4 @@
-# Copyright 2019 CEA
+# Copyright 2019-2020 CEA
 # Author: Yann Leprince <yann.leprince@cea.fr>
 #
 # This file is part of cortical-voluba.
@@ -18,8 +18,6 @@
 
 import os.path
 from unittest.mock import ANY, patch
-
-import pytest
 
 from testdata import DUMMY_NIFTI_GZ, DUMMY_IMAGE_LIST
 from cortical_voluba import image_service
@@ -90,7 +88,6 @@ TEST_ALIGNMENT_REQUEST = {
 @patch('cortical_voluba.alignment.estimate_deformation', autospec=True)
 @patch('cortical_voluba.alignment.transform_image', autospec=True,
        side_effect=transform_image_mock)
-@pytest.mark.usefixtures('flask_app')  # needed for celery backend config
 def test_alignment_task(transform_image_mock,
                         estimate_deformation_mock,
                         image_service_client_mock,
@@ -118,3 +115,17 @@ def test_alignment_task(transform_image_mock,
     assert 'transformed_image_name' in ret['results']
     assert 'transformed_image_neuroglancer_url' in ret['results']
     assert 'transformation_matrix' in ret['results']
+
+
+def test_worker_health_task(flask_app, tmp_path):
+    from cortical_voluba.tasks import worker_health_task
+
+    depth_path = tmp_path / 'depth.nii.gz'
+    flask_app.config['TEMPLATE_EQUIVOLUMETRIC_DEPTH'] = str(depth_path)
+
+    ret = worker_health_task()
+    assert ret is False
+
+    depth_path.touch()
+    ret = worker_health_task()
+    assert ret is True

@@ -1,4 +1,4 @@
-# Copyright 2019 CEA
+# Copyright 2019-2020 CEA
 # Author: Yann Leprince <yann.leprince@cea.fr>
 #
 # This file is part of cortical-voluba.
@@ -274,3 +274,8 @@ def alignment_computation_task(self, params, *, bearer_token):
         }
     finally:
         shutil.rmtree(work_dir)
+
+
+@celery_app.task
+def worker_health_task():
+    return os.path.isfile(current_app.config['TEMPLATE_EQUIVOLUMETRIC_DEPTH'])

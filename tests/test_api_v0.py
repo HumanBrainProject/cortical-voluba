@@ -1,4 +1,4 @@
-# Copyright 2019 CEA
+# Copyright 2019-2020 CEA
 # Author: Yann Leprince <yann.leprince@cea.fr>
 #
 # This file is part of cortical-voluba.
@@ -29,10 +29,27 @@ from testdata import DUMMY_IMAGE_LIST
 
 @pytest.fixture(autouse=True)
 def prevent_async_celery(monkeypatch):
+    class AsyncResultMock(celery.result.AsyncResult):
+        def __init__(self, id, get_return_value, *args, **kwargs):
+            super().__init__(id, *args, **kwargs)
+            self._get_return_value = get_return_value
+
+        def get(self, *args, **kwargs):
+            return self._get_return_value
+
+    get_return_value = None
+
     # Prevent the Celery task from being actually called
     def mock_send_task(self, task_name, *args, **kwargs):
-        return celery.result.AsyncResult('dummy_id_for_' + task_name)
+        return AsyncResultMock('dummy_id_for_' + task_name, get_return_value)
     monkeypatch.setattr(celery.app.base.Celery, 'send_task', mock_send_task)
+
+    class ResultMocker:
+        def set_get_return_value(self, return_value):
+            nonlocal get_return_value
+            get_return_value = return_value
+
+    return ResultMocker()
 
 
 def test_create_depth_map_computation(flask_client, requests_mock):
@@ -342,3 +359,14 @@ def test_computation_status(monkeypatch, flask_client, computation_type):
     assert 'message' in response.json
     assert response.json['error'] is True
     assert 'results' not in response.json
+
+
+def test_worker_health(flask_client, prevent_async_celery):
+    prevent_async_celery.set_get_return_value(True)
+    response = flask_client.get('/v0/worker-health')
+    assert response.status_code == 200
+
+    prevent_async_celery.set_get_return_value(False)
+    response = flask_client.get('/v0/worker-health')
+    assert response.status_code == 500
+    assert 'message' in response.json

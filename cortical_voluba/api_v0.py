@@ -1,4 +1,4 @@
-# Copyright 2019 CEA
+# Copyright 2019-2020 CEA
 # Author: Yann Leprince <yann.leprince@cea.fr>
 #
 # This file is part of cortical-voluba.
@@ -445,3 +445,33 @@ def make_computation_task_status_response(task_result):
             'error': True,
         }
     return make_response(jsonify(result), 200)
+
+
+@bp.route('/worker-health', methods=['GET'])
+@bp.response(ErrorResponseSchema, code=500)
+@bp.response(code=200)
+def worker_health():
+    """Test health of the workers.
+
+    This endpoint allows to test if the workers (the process that perform the
+    actual computations asynchronously) can be contacted and are able to
+    respond. In case of success, an empty HTTP 200 response is sent.
+
+    The response will be sent only once the worker has responded, so that **in
+    case of a broken connection to the worker, this endpoint will hang
+    forever**.
+
+    This endpoint also performs a basic sanity check on the workers (as of now,
+    it tests if the equivolumetric depth map of the template is accessible). If
+    this check fails, a 500 HTTP status will be returned along with a
+    descriptive error message.
+    """
+    async_result = tasks.worker_health_task.delay()
+    result = async_result.get()
+    if result:
+        return '', 200
+    else:
+        return {
+            'message': 'The Celery worker cannot access the template'
+                       'equivolumetric depth.',
+        }, 500
