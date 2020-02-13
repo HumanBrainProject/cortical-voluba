@@ -19,6 +19,7 @@
 """VoluBA backend for non-linear depth-informed alignment of cortical patches.
 """
 
+import datetime
 import importlib
 import logging
 import logging.config
@@ -46,6 +47,9 @@ class DefaultConfig:
     # Passed as the 'origins' parameter to flask_cors.CORS, see
     # https://flask-cors.readthedocs.io/en/latest/api.html#flask_cors.CORS
     CORS_ORIGINS = r'https://voluba(-dev)?\.apps(-dev)?\.hbp\.eu'
+    # Duration that the browser is allowed to cache the results of a CORS
+    # preflight request.
+    CORS_MAX_AGE = datetime.timedelta(minutes=10)
     # Set the full path to bv_env if it is not in the system PATH
     BV_ENV_PATH = 'bv_env'
     # Set to True to enable the /echo endpoint (for debugging)
@@ -158,6 +162,7 @@ def create_app(test_config=None):
     if app.config.get('CORS_ORIGINS'):
         import flask_cors
         flask_cors.CORS(app, origins=app.config['CORS_ORIGINS'],
+                        max_age=app.config['CORS_MAX_AGE'],
                         allow_headers=['Authorization', 'Content-Type'])
 
     # Celery must be initialized before the tasks module is imported, i.e.

@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with cortical-voluba. If not, see <https://www.gnu.org/licenses/>.
 
+import datetime
+
 import cortical_voluba
 
 
@@ -68,6 +70,23 @@ def test_CORS():
         response = client.get('/')
     assert 'Access-Control-Allow-Origin' in response.headers
     assert response.headers['Access-Control-Allow-Origin'] == '*'
+    app = create_app({'TESTING': True, 'CORS_ORIGINS': '*'})
+    with app.test_client() as client:
+        response = client.options('/', headers={
+            'Origin': 'https://h.test',
+            'Access-Control-Request-Method': 'GET',
+        })
+    assert 'Access-Control-Allow-Origin' in response.headers
+    assert 'Access-Control-Max-Age' in response.headers
+    app = create_app({'TESTING': True, 'CORS_ORIGINS': '*',
+                      'CORS_MAX_AGE': datetime.timedelta(seconds=42)})
+    with app.test_client() as client:
+        response = client.options('/', headers={
+            'Origin': 'https://h.test',
+            'Access-Control-Request-Method': 'GET',
+        })
+    assert 'Access-Control-Max-Age' in response.headers
+    assert response.headers['Access-Control-Max-Age'] == '42'
 
 
 def test_proxy_fix():
