@@ -1,11 +1,14 @@
-Deploying on an OpenShift cluster
+Deploying to an OpenShift cluster
 =================================
 
-#. Create the project named `cortical-voluba` on https://okd.hbp.eu/
-#. Log in to https://okd.hbp.eu/ using the command-line ``oc`` tool, switch to the `cortical-voluba` project with ``oc project cortical-voluba``
+As an example, these are the instructions for restoring the deployment on https://okd-dev.hbp.eu/.
+
+#. You can use the deployment configuration saved in `<openshift-dev-export.yaml>`_ provided in the repository as a starting point. Edit the route contained in this file to use the correct URL.
+#. Create the project named `cortical-voluba` on https://okd-dev.hbp.eu/
+#. Log in using the command-line ``oc`` tool (https://okd-dev.hbp.eu/console/command-line), switch to the `cortical-voluba` project with ``oc project cortical-voluba``
 #. Import the objects from your edited YAML file using ``oc create -f openshift-dev-export.yaml``
 #. Re-create the Persistent Volume Claims and upload the data (see below).
-#. Create the needed Config Maps and Secrets.
+#. Edit the Config Maps if needed, re-create the needed Secrets (namely ``redis/database-password``).
 #. Start the build. The deployment should follow automatically.
 #. Go to `Builds` -> `Builds` -> `cortical-voluba` -> `Configuration`, copy the GitHub Webhook URL and configure it into the GitHub repository (https://github.com/HumanBrainProject/cortical-voluba/settings/hooks). Make sure to set the Content Type to ``application/json``.
 
@@ -13,7 +16,7 @@ Deploying on an OpenShift cluster
 Deployment on okd-dev.hbp.eu
 ============================
 
-The deployment configuration is saved to `openshift-dev-export.yaml` by running ``oc get -o yaml --export is,bc,dc,svc,route,pvc,cm,horizontalpodautoscaler`` (`status` information is stripped manually). See https://collab.humanbrainproject.eu/#/collab/38996/nav/270508 and https://github.com/HumanBrainProject/hbp-spatial-backend/tree/master/openshift-deployment#deploying-to-production for instructions for restoring a working deployment using this snapshot.
+The deployment configuration is saved to `<openshift-dev-export.yaml>`_ by running ``oc get -o yaml --export is,bc,dc,svc,route,pvc,cm,horizontalpodautoscaler > openshift-dev-export.yaml`` (`status` information is stripped manually).
 
 For the record, here are the steps that were used to create this OpenShift project on https://okd-dev.hbp.eu/:
 
