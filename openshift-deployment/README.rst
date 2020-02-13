@@ -81,7 +81,7 @@ For the record, here are the steps that were used to create this OpenShift proje
              import os
              CELERY_BROKER_URL = 'redis://:' + os.environ['REDIS_PASSWORD'] + '@redis:6379/0'
              CELERY_RESULT_BACKEND = CELERY_BROKER_URL
-             CORS_ORIGINS = r'https://voluba(-dev)?\.apps(-dev)?\.hbp\.eu'
+             CORS_ORIGINS = r'https://.*\.(hbp\.eu|humanbrainproject\.eu|humanbrainproject\.org)'
              PROXY_FIX = {
                  'x_for': 1,
                  'x_host': 1,
