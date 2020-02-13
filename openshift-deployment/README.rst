@@ -10,12 +10,12 @@ Deploying on an OpenShift cluster
 #. Go to `Builds` -> `Builds` -> `cortical-voluba` -> `Configuration`, copy the GitHub Webhook URL and configure it into the GitHub repository (https://github.com/HumanBrainProject/cortical-voluba/settings/hooks). Make sure to set the Content Type to ``application/json``.
 
 
-Deployment on openshift-dev.hbp.eu
-==================================
+Deployment on okd-dev.hbp.eu
+============================
 
 The deployment configuration is saved to `openshift-dev-export.yaml` by running ``oc get -o yaml --export is,bc,dc,svc,route,pvc,cm,horizontalpodautoscaler`` (`status` information is stripped manually). See https://collab.humanbrainproject.eu/#/collab/38996/nav/270508 and https://github.com/HumanBrainProject/hbp-spatial-backend/tree/master/openshift-deployment#deploying-to-production for instructions for restoring a working deployment using this snapshot.
 
-For the record, here are the steps that were used to create this OpenShift project on https://openshift-dev.hbp.eu/:
+For the record, here are the steps that were used to create this OpenShift project on https://okd-dev.hbp.eu/:
 
 #. Create the project / navigate to the project
 #. Configure the Flask instance
@@ -167,7 +167,7 @@ For the record, here are the steps that were used to create this OpenShift proje
 
    #. Upload the static data (equivolumetric depth for BigBrain). We follow the method described on https://blog.openshift.com/transferring-files-in-and-out-of-containers-in-openshift-part-3/
 
-      #. Install the OpenShift Command-Line Tools by following the instructions on https://openshift-dev.hbp.eu/console/command-line
+      #. Install the OpenShift Command-Line Tools by following the instructions on https://okd-dev.hbp.eu/console/command-line
       #. Log in using the CLI (Under your name on the top right corner, hit `Copy Login Command` and paste it into a terminal)
       #. Switch to the project (``oc project cortical-voluba``)
       #. Run a dummy pod for rsync transfer with ``oc run dummy --image ylep/oc-rsync-transfer``
