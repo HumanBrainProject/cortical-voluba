@@ -8,7 +8,7 @@ As an example, these are the instructions for restoring the deployment on https:
 #. Log in using the command-line ``oc`` tool (https://okd-dev.hbp.eu/console/command-line), switch to the `cortical-voluba` project with ``oc project cortical-voluba``
 #. Import the objects from your edited YAML file using ``oc create -f openshift-dev-export.yaml``
 #. Re-create the Persistent Volume Claims and upload the data (see below).
-#. Edit the Config Maps if needed, re-create the needed Secrets (namely ``redis/database-password``).
+#. Edit the Config Maps if needed, re-create the needed Secrets (namely ``redis/database-password`` and ``github-webhook-secret``).
 #. Start the build. The deployment should follow automatically.
 #. Go to `Builds` -> `Builds` -> `cortical-voluba` -> `Configuration`, copy the GitHub Webhook URL and configure it into the GitHub repository (https://github.com/HumanBrainProject/cortical-voluba/settings/hooks). Make sure to set the Content Type to ``application/json``.
 
@@ -16,7 +16,7 @@ As an example, these are the instructions for restoring the deployment on https:
 Deployment on okd-dev.hbp.eu
 ============================
 
-The deployment configuration is saved to `<openshift-dev-export.yaml>`_ by running ``oc get -o yaml --export is,bc,dc,svc,route,pvc,cm,horizontalpodautoscaler > openshift-dev-export.yaml`` (`status` information is stripped manually).
+The deployment configuration is saved to `<openshift-dev-export.yaml>`_ by running ``oc get -o yaml --export is,bc,dc,svc,route,pvc,cm,horizontalpodautoscaler > openshift-dev-export.yaml`` (`status`, `resourceVersion`, `generation`, `@sha256`, `PersistentVolumeClaim` metadata (`volumeName`, `finalizers`, `annotations`) and `secret` information is stripped manually, see https://collab.humanbrainproject.eu/#/collab/38996/nav/270508 for other edits that may be necessary).
 
 For the record, here are the steps that were used to create this OpenShift project on https://okd-dev.hbp.eu/:
 
@@ -37,6 +37,9 @@ For the record, here are the steps that were used to create this OpenShift proje
 
    #. Hit `Create` at the bottom of the page
    #. Follow the instructions to configure the GitHub webhook
+
+      #. (optional) If you are going to publish the OpenShift deployment configuration, make sure that the webhook secrets refer to a real `Secret` resource (e.g. ``github-webhook-secret``) instead of being stored in clear-text in the `BuildConfig` object.
+
    #. Change the build configuration to use the `Docker` build strategy:
 
       #. Go to `Builds` -> `Builds` -> `cortical-voluba-flask` -> `Actions` -> `Edit YAML`
@@ -116,6 +119,9 @@ For the record, here are the steps that were used to create this OpenShift proje
 
    #. Hit `Create` at the bottom of the page
    #. Follow the instructions to configure the GitHub webhook
+
+      #. (optional) If you are going to publish the OpenShift deployment configuration, make sure that the webhook secrets refer to a real `Secret` resource (e.g. ``github-webhook-secret``) instead of being stored in clear-text in the `BuildConfig` object.
+
    #. Change the build configuration to use the `Docker` build strategy:
 
       #. Go to `Builds` -> `Builds` -> `cortical-voluba-celery` -> `Actions` -> `Edit YAML`
@@ -155,6 +161,7 @@ For the record, here are the steps that were used to create this OpenShift proje
          - `INSTANCE_PATH` = `/instance`
          - `REDIS_PASSWORD` from Secret `redis/database-password`
 
+      #. (recommended) Add resource requests to ensure that Celery workers will have sufficient memory and CPU to perform the computations. 4 GiB of memory are needed to run the example, and a CPU request is necessary to activate CPU autoscaling. Ideally we would need 1 full CPU, but on okd-dev this fails because there are no suitable nodes.
       #. (optional) Add an Autoscaler so that OpenShift can automatically adapt the number of Celery workers to the number of ongoing computations: go to `Actions` -> `Add Autoscaler`, set `Max pods` to 5, and `CPU Request Target` to 50%. Validate by clicking `Save`.
 
    #. Create a volume to hold the static data (equivolumetric depth for BigBrain)
