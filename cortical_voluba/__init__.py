@@ -46,7 +46,8 @@ class DefaultConfig:
     CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
     # Passed as the 'origins' parameter to flask_cors.CORS, see
     # https://flask-cors.readthedocs.io/en/latest/api.html#flask_cors.CORS
-    CORS_ORIGINS = r'https://voluba(-dev)?\.apps(-dev)?\.hbp\.eu'
+    CORS_ORIGINS = (r'https://.*\.(hbp\.eu|humanbrainproject\.eu|'
+                    r'humanbrainproject\.org)')
     # Duration that the browser is allowed to cache the results of a CORS
     # preflight request.
     CORS_MAX_AGE = datetime.timedelta(minutes=10)
