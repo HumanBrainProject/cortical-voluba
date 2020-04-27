@@ -101,6 +101,7 @@ def test_proxy_fix():
         },
     })
     called = False
+
     @app.route('/test')
     def test():
         nonlocal called
@@ -109,6 +110,7 @@ def test_proxy_fix():
         assert request.access_route[0] == '1.2.3.4'
         called = True
         return ''
+
     client = app.test_client()
     client.get('/test', headers={
         'X-Forwarded-For': '1.2.3.4',
