@@ -83,6 +83,7 @@ TEST_ALIGNMENT_REQUEST = {
     ],
 }
 
+
 @patch('cortical_voluba.image_service.ImageServiceClient', autospec=True,
        wraps=ImageServiceStub)
 @patch('cortical_voluba.alignment.estimate_deformation', autospec=True)
