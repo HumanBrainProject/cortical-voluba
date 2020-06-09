@@ -293,7 +293,9 @@ class MockBackend(celery.backends.base.KeyValueStoreBackend):
     def get(self, key):
         return self._store.get(key)
 
-    def set(self, key, value):
+    # Starting with Celery v4.4.4 this method takes a 4th argument (state)
+    # that we can safely ignore.
+    def set(self, key, value, *args):
         self._store[key] = value
 
     def delete(self, key):
@@ -341,6 +343,16 @@ def test_computation_status(monkeypatch, flask_client, computation_type):
     assert 'error' not in response.json
     assert 'results' not in response.json
 
+    # Test failure first, because Celery allows a task to transition from
+    # FAILURE to SUCCESS, but not the other way around.
+    mock_backend.mark_as_failure('dummy_id', Exception('toto'))
+    response = flask_client.get(endpoint_url)
+    assert response.status_code == 200
+    assert response.json['finished'] is True
+    assert 'message' in response.json
+    assert response.json['error'] is True
+    assert 'results' not in response.json
+
     mock_backend.mark_as_done('dummy_id', {
         'message': 'success',
         'results': 'placeholder',
@@ -351,14 +363,6 @@ def test_computation_status(monkeypatch, flask_client, computation_type):
     assert 'message' in response.json
     assert response.json['results'] == 'placeholder'
     assert 'error' not in response.json
-
-    mock_backend.mark_as_failure('dummy_id', Exception('toto'))
-    response = flask_client.get(endpoint_url)
-    assert response.status_code == 200
-    assert response.json['finished'] is True
-    assert 'message' in response.json
-    assert response.json['error'] is True
-    assert 'results' not in response.json
 
 
 def test_worker_health(flask_client, prevent_async_celery):
